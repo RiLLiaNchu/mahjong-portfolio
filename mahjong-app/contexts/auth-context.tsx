@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
@@ -225,7 +226,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             mounted = false;
             listener.subscription.unsubscribe();
         };
-         
     }, []);
 
     // 公開 API: プロファイル再取得
@@ -288,30 +288,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // ゲストサインイン（クライアント側で擬似ユーザーを作る）
-    const signInAsGuest = async (name: string) => {
-        const guestId = crypto.randomUUID();
-        const guestUser = {
-            id: guestId,
-            email: `${guestId}@guest.local`,
-            user_metadata: { name, is_guest: true },
-        } as unknown as User;
+    const signInAsGuest = async (name: string): Promise<void> => {
+        setLoading(true); // 追加
+        try {
+            const guestId = crypto.randomUUID();
+            const guestUser = {
+                id: guestId,
+                email: `${guestId}@guest.local`,
+                user_metadata: { name, is_guest: true },
+            } as unknown as User;
 
-        setAuthUser(guestUser);
-        setIsGuest(true);
+            setAuthUser(guestUser);
+            setIsGuest(true);
 
-        // サーバーのAPIを呼び出してDB同期をお願いする
-        const res = await fetch("/api/guest-sync", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                id: guestUser.id,
-                email: guestUser.email,
-                name,
-            }),
-        });
+            // サーバー同期
+            const res = await fetch("/api/guest-sync", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: guestUser.id,
+                    email: guestUser.email,
+                    name,
+                }),
+            });
 
-        if (!res.ok) {
-            console.error("ゲスト同期APIエラー", await res.text());
+            if (!res.ok) {
+                console.error("ゲスト同期APIエラー", await res.text());
+            }
+
+            // プロファイル同期（必要なら）
+            await fetchProfile(guestUser.id);
+        } catch (err) {
+            console.error("signInAsGuest error:", err);
+            throw err;
+        } finally {
+            setLoading(false); // 追加
         }
     };
 

@@ -1,22 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
     try {
-        const { id, email, name } = await request.json();
+        const body = await req.json();
+        const { id, email, name } = body;
 
-        const supabaseAdmin = await getSupabaseAdmin();
+        if (!id || !email || !name) {
+            return NextResponse.json(
+                { error: "必須項目が不足しています" },
+                { status: 400 }
+            );
+        }
 
-        const { error } = await supabaseAdmin
-            .from("users")
-            .upsert({ id, email, name, is_admin: false }, { onConflict: "id" });
+        const supabase = await getSupabaseAdmin();
+
+        // ゲストユーザーをDBに追加（既存なら更新）
+        const { error } = await supabase.from("users").upsert([
+            {
+                id,
+                email,
+                name,
+                is_guest: true,
+            },
+        ]);
 
         if (error) {
+            console.error("ゲストDB同期エラー", error);
             return NextResponse.json({ error: error.message }, { status: 500 });
         }
 
-        return NextResponse.json({ message: "ok" });
-    } catch {
-        return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+        return NextResponse.json({ message: "ゲスト同期完了" });
+    } catch (err: any) {
+        console.error("guest-sync API エラー", err);
+        return NextResponse.json(
+            { error: err.message || "予期せぬエラー" },
+            { status: 500 }
+        );
     }
 }

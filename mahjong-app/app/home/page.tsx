@@ -17,8 +17,8 @@ import { Header } from "@/components/ui/header";
 import { AuthGuard } from "@/components/features/AuthGuard";
 
 export default function HomePage() {
-    const { authUser, loading, signOut } = useAuth();
     const router = useRouter();
+    const { authUser, isGuest, loading, signOut } = useAuth();
     const [stats, setStats] = useState({
         totalGames: 12,
         averageRank: 2.3,
@@ -27,10 +27,10 @@ export default function HomePage() {
     });
 
     useEffect(() => {
-        if (!loading && !authUser) {
-            router.push("/");
+        if (!loading && !authUser && !isGuest) {
+            router.push("/"); // authUser もゲストもいなければトップに戻す
         }
-    }, [authUser, loading, router]);
+    }, [authUser, isGuest, loading, router]);
 
     if (loading) {
         return (
@@ -58,6 +58,13 @@ export default function HomePage() {
                         </div>
                     }
                 />
+
+                {/* ゲストメッセージ */}
+                {isGuest && (
+                    <div className="text-center text-sm text-gray-700 bg-yellow-50 p-2 rounded mt-2 mb-4">
+                        👤 ゲストユーザーとして利用中です
+                    </div>
+                )}
 
                 <div className="container mx-auto px-4 py-6 space-y-6">
                     {/* 統計サマリー */}

@@ -1,12 +1,12 @@
 {
     "functions": {
-        "functions/cleanup_rooms/index.ts": {
+        "functions/cleanup_all/index.ts": {
             "runtime": "edge"
         }
     },
     "crons": [
         {
-            "path": "/functions/cleanup_rooms",
+            "path": "/api/cleanup_all",
             "schedule": "0 0 * * *"
         }
     ]
