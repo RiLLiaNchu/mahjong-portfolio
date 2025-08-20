@@ -1,0 +1,13 @@
+{
+    "functions": {
+        "functions/cleanup_rooms/index.ts": {
+            "runtime": "edge"
+        }
+    },
+    "crons": [
+        {
+            "path": "/functions/cleanup_rooms",
+            "schedule": "0 0 * * *"
+        }
+    ]
+}
