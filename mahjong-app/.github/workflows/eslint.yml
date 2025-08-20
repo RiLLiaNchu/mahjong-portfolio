@@ -11,23 +11,26 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            # リポジトリをチェックアウト
             - name: Checkout repository
               uses: actions/checkout@v3
 
+            # Node.js をセットアップ
             - name: Setup Node.js
               uses: actions/setup-node@v3
               with:
                   node-version: 20
 
+            # 依存関係をインストール
             - name: Install dependencies
               run: pnpm install
 
-            # ESLint 実行（エラーがあれば CI が赤になる）
+            # ESLint を実行（エラーがあれば CI が赤になる）
             - name: Run ESLint
               id: eslint
               run: pnpm exec eslint . --format json --output-file eslint-report.json
 
-            # PR に結果をコメントとして出力
+            # PR に ESLint 結果をコメントとして出力
             - name: Post ESLint results to PR
               if: github.event_name == 'pull_request'
               uses: actions/github-script@v7
