@@ -1,14 +1,16 @@
 import { FlatCompat } from "@eslint/eslintrc";
+import path from "path";
+import url from "url";
+
+const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 const compat = new FlatCompat({
+    recommendedConfig: {},
     baseDirectory: __dirname,
 });
 
 export default [
-    // ESLintの推奨設定
     ...compat.extends("eslint:recommended"),
-    // TypeScript用の推奨設定
     ...compat.extends("plugin:@typescript-eslint/recommended"),
-    // Next.js Core Web Vitals 推奨設定
     ...compat.extends("next/core-web-vitals"),
 ];

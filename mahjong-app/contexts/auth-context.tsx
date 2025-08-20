@@ -225,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             mounted = false;
             listener.subscription.unsubscribe();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, []);
 
     // 公開 API: プロファイル再取得
