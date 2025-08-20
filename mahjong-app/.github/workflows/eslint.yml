@@ -1,24 +1,30 @@
 name: ESLint Check
 
 on:
-  push:
-    branches:
-      - main
-      - feature/**      # featureブランチでもチェック
-  pull_request:
-    branches:
-      - main
+    push:
+        branches:
+            - main
+            - "feature/**"
+    pull_request:
+        branches:
+            - main
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Install dependencies
-        run: pnpm install
-      - name: Run ESLint
-        run: pnpm eslint . --max-warnings=0
+    eslint:
+        name: Run ESLint
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 20
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Run ESLint
+              run: npx eslint . --ext .ts,.tsx
