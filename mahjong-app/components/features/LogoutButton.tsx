@@ -9,12 +9,38 @@ export const LogoutButton: React.FC<{ onAfterLogout?: () => void }> = ({
     const router = useRouter();
 
     const handleLogout = async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            console.error("ログアウト失敗", error.message);
-        } else {
-            onAfterLogout?.();
-            router.push("/login"); // ログアウト後の遷移先
+        try {
+            // セッション情報を取得
+            const {
+                data: { session },
+                error: sessionError,
+            } = await supabase.auth.getSession();
+
+            if (sessionError) {
+                console.error(
+                    "セッション取得中にエラー:",
+                    sessionError.message
+                );
+                return;
+            }
+
+            if (!session) {
+                console.warn("ログアウト前にセッションが存在しません。");
+                // 必要なら強制的にトップページに飛ばす
+                router.push("/");
+                return;
+            }
+
+            // セッションがある場合のみログアウト
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+                console.error("ログアウト失敗:", error.message);
+            } else {
+                onAfterLogout?.();
+                router.push("/");
+            }
+        } catch (err) {
+            console.error("ログアウト処理中に予期せぬエラー:", err);
         }
     };
 
