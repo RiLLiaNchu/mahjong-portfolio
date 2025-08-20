@@ -1,17 +1,13 @@
 name: ESLint Check
 
 on:
-    push:
-        branches:
-            - main
-            - "feature/**"
     pull_request:
         branches:
             - main
+            - "feature/**"
 
 jobs:
     eslint:
-        name: Run ESLint
         runs-on: ubuntu-latest
 
         steps:
@@ -24,7 +20,46 @@ jobs:
                   node-version: 20
 
             - name: Install dependencies
-              run: npm install
+              run: pnpm install
 
+            # ESLint 実行（エラーがあれば CI が赤になる）
             - name: Run ESLint
-              run: npx eslint . --ext .ts,.tsx
+              id: eslint
+              run: pnpm exec eslint . --format json --output-file eslint-report.json
+
+            # PR に結果をコメントとして出力
+            - name: Post ESLint results to PR
+              if: github.event_name == 'pull_request'
+              uses: actions/github-script@v7
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const fs = require('fs');
+                      const reportFile = 'eslint-report.json';
+                      if (!fs.existsSync(reportFile)) {
+                        console.log('No ESLint report found');
+                        return;
+                      }
+
+                      const report = JSON.parse(fs.readFileSync(reportFile, 'utf-8'));
+                      let message = '';
+
+                      report.forEach(file => {
+                        if (file.messages.length > 0) {
+                          message += `**${file.filePath}**\n`;
+                          file.messages.forEach(msg => {
+                            message += `- Line ${msg.line}, Col ${msg.column}: ${msg.message} (${msg.ruleId})\n`;
+                          });
+                        }
+                      });
+
+                      const body = message
+                        ? `🛑 ESLint found some issues:\n\n${message}`
+                        : '✅ ESLint: No issues found!';
+
+                      github.rest.issues.createComment({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        body,
+                      });
