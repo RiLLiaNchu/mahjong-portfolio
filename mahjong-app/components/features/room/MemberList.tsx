@@ -2,7 +2,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-type PlayerStat = {
+export type PlayerStat = {
     player_id: string;
     name: string;
     latest_rank: number;
@@ -10,12 +10,12 @@ type PlayerStat = {
     total_score: number;
 };
 
-export default function ScoreBoard({ stats }: { stats: PlayerStat[] }) {
+export const MemberList = ({ stats }: { stats: PlayerStat[] }) => {
     return (
         <Card className="border-green-200 max-w-screen-lg mx-auto">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-700">
-                    📊 成績表
+                    📊 メンバーリスト
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -72,4 +72,4 @@ export default function ScoreBoard({ stats }: { stats: PlayerStat[] }) {
             </CardContent>
         </Card>
     );
-}
+};
