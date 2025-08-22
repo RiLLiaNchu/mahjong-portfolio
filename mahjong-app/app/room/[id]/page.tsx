@@ -9,6 +9,8 @@ import {
     type PlayerStat,
 } from "@/components/features/room/MemberList";
 import { TableList, type Table } from "@/components/features/room/TableList";
+import { CreateTableDialog } from "@/components/features/room/CreateTableDialog";
+import { useAuth } from "@/contexts/auth-context";
 
 type Member = { id: string; name: string };
 type Room = { id: string; name: string; code: string };
@@ -22,13 +24,16 @@ type LatestGame = {
 export default function RoomPage() {
     const params = useParams();
     const roomId = params.id as string;
+    const { profile } = useAuth();
 
     const [room, setRoom] = useState<Room | null>(null);
     const [members, setMembers] = useState<Member[]>([]);
     const [tables, setTables] = useState<Table[]>([]);
     const [latestGames, setLatestGames] = useState<LatestGame[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+    const userName = profile?.name || "ユーザー";
     // stats は成績表用の配列
     const stats: PlayerStat[] = members.map((m) => {
         const latest = latestGames.find((g) => g.scores[m.id] !== undefined);
@@ -121,31 +126,21 @@ export default function RoomPage() {
             {/* ヘッダー */}
             <Header backHref="/room-list" title={room?.name} />
 
+            {/* モーダル表示 */}
+            {isCreateDialogOpen && (
+                <CreateTableDialog
+                    userName={userName}
+                    roomId={roomId}
+                    onClose={() => setIsCreateDialogOpen(false)}
+                />
+            )}
+
             <main className="flex-1 max-w-3xl mx-auto p-4 space-y-6">
                 {/* 卓一覧 */}
                 <TableList
                     tables={tables}
-                    onAddTable={() => console.log("卓を追加")}
+                    onAddTable={() => setIsCreateDialogOpen(true)}
                 />
-                {/* <div className="bg-white rounded-xl shadow p-4">
-                    <h2 className="text-xl font-semibold mb-3">卓一覧</h2>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {tables.map((t) => (
-                            <div
-                                key={t.id}
-                                className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-                            >
-                                <span>{t.name}</span>
-                                <span className="text-sm text-gray-500">
-                                    {t.type}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                    <button className="w-full mt-3 p-3 border-2 border-dashed rounded-lg text-gray-500 hover:bg-gray-50">
-                        ＋卓を追加
-                    </button>
-                </div> */}
 
                 {/* メンバーリスト */}
                 <MemberList stats={stats} />

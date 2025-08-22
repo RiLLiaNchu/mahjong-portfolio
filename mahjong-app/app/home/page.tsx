@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, Users, Plus, Settings } from "lucide-react";
 import { Header } from "@/components/ui/header";
 import { AuthGuard } from "@/components/features/AuthGuard";
@@ -14,7 +13,7 @@ import { HomeStatsSelector } from "@/components/features/home-page/HomeStatsSele
 type GameType = "sanma" | "yonma";
 type GameLength = "tonpu" | "hanchan";
 
-export default function HomePage() {
+export const HomePage = () => {
     const router = useRouter();
     const { profile, isGuest, loading } = useAuth();
 
@@ -118,4 +117,4 @@ export default function HomePage() {
             </div>
         </AuthGuard>
     );
-}
+};

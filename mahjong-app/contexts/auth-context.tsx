@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
 type Profile = {
     id: string;
@@ -13,7 +12,7 @@ type Profile = {
     updated_at?: string | null;
 };
 
-interface AuthContextType {
+type AuthContextType = {
     authUser: Profile | null;
     profile: Profile | null;
     loading: boolean;
@@ -24,11 +23,11 @@ interface AuthContextType {
     signInAsGuest: (name: string) => Promise<void>;
     signOut: () => Promise<void>;
     refreshProfile: () => Promise<void>;
-}
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [authUser, setAuthUser] = useState<Profile | null>(null);
     const [profile, setProfile] = useState<Profile | null>(null);
     const [loading, setLoading] = useState(true);
@@ -209,7 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             {children}
         </AuthContext.Provider>
     );
-}
+};
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
