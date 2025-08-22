@@ -28,6 +28,7 @@ export default function RoomPage() {
     const [latestGames, setLatestGames] = useState<LatestGame[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // stats は成績表用の配列
     const stats: PlayerStat[] = members.map((m) => {
         const latest = latestGames.find((g) => g.scores[m.id] !== undefined);
 
@@ -140,7 +141,7 @@ export default function RoomPage() {
                     </button>
                 </div>
 
-                {/* 成績サマリー */}
+                {/* メンバーリスト */}
                 <MemberList stats={stats} />
             </main>
         </div>
