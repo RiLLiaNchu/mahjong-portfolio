@@ -9,7 +9,7 @@ import { RoomWithAuthor } from "@/types/room";
 import { RoomPasswordModal } from "@/components/features/room-list/RoomPasswordModal";
 import { RoomSearchBar } from "@/components/features/room-list/RoomSearchBar";
 
-export default function RoomList() {
+export default function RoomListPage() {
     const [rooms, setRooms] = useState<RoomWithAuthor[]>([]);
     const [search, setSearch] = useState("");
     const [selectedRoom, setSelectedRoom] = useState<RoomWithAuthor | null>(

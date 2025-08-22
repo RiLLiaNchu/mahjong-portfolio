@@ -45,7 +45,7 @@ export const CreateTableDialog = ({
 
             toast({ title: "卓を作成しました！" });
             onClose(); // 作成後にモーダル閉じる
-            router("/")
+            router("/");
         } catch (error) {
             console.error("卓作成エラー:", error);
 

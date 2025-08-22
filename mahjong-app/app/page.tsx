@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
 
-export default function HomePage() {
+export default function TopPage() {
     const { authUser, loading } = useAuth();
     const router = useRouter();
 

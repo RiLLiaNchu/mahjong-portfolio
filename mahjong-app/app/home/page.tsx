@@ -13,7 +13,7 @@ import { HomeStatsSelector } from "@/components/features/home-page/HomeStatsSele
 type GameType = "sanma" | "yonma";
 type GameLength = "tonpu" | "hanchan";
 
-export const HomePage = () => {
+export default function HomePage() {
     const router = useRouter();
     const { profile, isGuest, loading } = useAuth();
 
@@ -117,4 +117,4 @@ export const HomePage = () => {
             </div>
         </AuthGuard>
     );
-};
+}
