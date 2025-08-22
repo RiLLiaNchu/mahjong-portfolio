@@ -32,10 +32,10 @@ export const RoomCreateForm = () => {
             const {
                 data: { user },
             } = await supabase.auth.getUser();
-            if (!user) throw new Error("ログインしてください");
 
+            // 有効期限（例: 24時間後）
             const expiresAt = new Date();
-            expiresAt.setHours(expiresAt.getHours() + 24); // 例: 24時間後に自動削除予定
+            expiresAt.setHours(expiresAt.getHours() + 24);
 
             // ルーム作成
             const { data, error } = await supabase
@@ -44,7 +44,7 @@ export const RoomCreateForm = () => {
                     {
                         name: newRoomName,
                         password: newRoomPassword,
-                        created_by: user.id,
+                        created_by: user ? user.id : null, // 👈 ログインしていれば user.id、ゲストなら null
                         expires_at: expiresAt.toISOString(),
                     },
                 ])
@@ -53,8 +53,8 @@ export const RoomCreateForm = () => {
 
             if (error) throw error;
 
-            // ルーム作成後に参加
-            await joinRoom(data.id);
+            // 作成後に参加
+            await joinRoom(data.id, newRoomPassword, user?.id ?? null);
 
             // フォームを閉じてリセット
             setShowCreateModal(false);

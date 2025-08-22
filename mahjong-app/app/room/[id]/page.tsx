@@ -1,160 +1,152 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-context";
-
-import MemberList from "./components/-MemberList";
-import TableList from "./components/-TableList";
-import CreateTableDialog from "./components/CreateTableDialog";
+import { useParams } from "next/navigation";
 import { Header } from "@/components/ui/header";
 
-interface Room {
+type Member = { id: string; name: string };
+type Room = { id: string; name: string; code: string };
+type Table = { id: string; name: string; type: string };
+type LatestGame = {
     id: string;
-    name: string;
-    code?: string;
-    created_at: string;
-    expires_at: string;
-    created_by: string;
-}
+    table_id: string;
+    scores: Record<string, number>;
+};
 
-interface RoomMember {
-    id: string;
-    user_id: string;
-    users: {
-        id: string;
-        name: string;
-        email: string;
-    };
-    joined_at: string;
-}
+export default function RoomPage() {
+    const params = useParams();
+    const roomId = params.id as string;
 
-export default function RoomPage({
-    params,
-}: {
-    params: Promise<{ id: string }>;
-}) {
     const [room, setRoom] = useState<Room | null>(null);
-    const [members, setMembers] = useState<RoomMember[]>([]);
-    const [tables, setTables] = useState<any[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [tables, setTables] = useState<Table[]>([]);
+    const [latestGames, setLatestGames] = useState<LatestGame[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const resolvedParams = use(params);
-
-    const { authUser } = useAuth();
-    const router = useRouter();
-    const roomId = resolvedParams.id;
 
     useEffect(() => {
-        if (!authUser) {
-            router.push("/login");
-            return;
-        }
+        if (!roomId) return;
 
-        loadRoomData(roomId);
+        const loadRoomData = async () => {
+            try {
+                // ルーム情報
+                const { data: roomData, error: roomError } = await supabase
+                    .from("rooms")
+                    .select("*")
+                    .eq("id", roomId)
+                    .single();
+                if (roomError) throw roomError;
+                setRoom(JSON.parse(JSON.stringify(roomData)));
 
-        // リアルタイム更新
-        const channel = supabase
-            .channel(`room-${roomId}`)
-            .on(
-                "postgres_changes",
-                {
-                    event: "*",
-                    schema: "public",
-                    table: "room_members",
-                    filter: `room_id=eq.${roomId}`,
-                },
-                () => loadRoomData(roomId)
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "*",
-                    schema: "public",
-                    table: "tables",
-                    filter: `room_id=eq.${roomId}`,
-                },
-                () => loadRoomData(roomId)
-            )
-            .subscribe();
+                // メンバー情報
+                const { data: membersData, error: membersError } =
+                    await supabase
+                        .from("room_members")
+                        .select("id, users(name)")
+                        .eq("room_id", roomId);
+                if (membersError) throw membersError;
 
-        return () => {
-            supabase.removeChannel(channel);
+                const membersWithNames: Member[] = (membersData as any[]).map(
+                    (m) => ({
+                        id: m.id,
+                        name: m.users?.name || "名無し",
+                    })
+                );
+                setMembers(JSON.parse(JSON.stringify(membersWithNames)));
+
+                // 卓一覧
+                const { data: tablesData, error: tablesError } = await supabase
+                    .from("tables")
+                    .select("*")
+                    .eq("room_id", roomId);
+                if (tablesError) throw tablesError;
+                setTables(JSON.parse(JSON.stringify(tablesData)));
+
+                // 最新対局
+                const latestGamesData: LatestGame[] = [];
+                for (const t of tablesData || []) {
+                    const { data: gameData, error: gameError } = await supabase
+                        .from("games")
+                        .select("*")
+                        .eq("table_id", t.id)
+                        .order("created_at", { ascending: false })
+                        .limit(1)
+                        .single();
+                    if (!gameError && gameData) {
+                        latestGamesData.push(
+                            JSON.parse(JSON.stringify(gameData))
+                        );
+                    }
+                }
+                setLatestGames(latestGamesData);
+            } catch (err: any) {
+                console.error("ルームデータ取得エラー:", err);
+            } finally {
+                setLoading(false);
+            }
         };
-    }, [authUser, roomId]);
 
-    const loadRoomData = async (roomId: string) => {
-        try {
-            setLoading(true);
-            setError("");
+        loadRoomData();
+    }, [roomId]);
 
-            // ルーム情報取得
-            const { data: roomData, error: roomError } = await supabase
-                .from("rooms")
-                .select("*")
-                .eq("id", roomId)
-                .single();
-            if (roomError) throw roomError;
-            setRoom(roomData);
-
-            // メンバー一覧取得
-            const { data: membersData, error: membersError } = await supabase
-                .from("room_members")
-                .select("*, users(id, name, email)")
-                .eq("room_id", roomId)
-                .order("joined_at", { ascending: true });
-            if (membersError) throw membersError;
-            setMembers(membersData || []);
-
-            // 卓一覧取得
-            const { data: tablesData, error: tablesError } = await supabase
-                .from("tables")
-                .select("*")
-                .eq("room_id", roomId)
-                .order("created_at", { ascending: false });
-            if (tablesError) throw tablesError;
-            setTables(tablesData || []);
-        } catch (e: any) {
-            console.error(e);
-            setError(e.message || "ルーム情報の取得に失敗しました");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (loading) return <div>読み込み中...</div>;
-    if (error) return <div>エラー: {error}</div>;
-    if (!room) return <div>ルームが見つかりません</div>;
+    if (loading) return <p className="text-center mt-10">読み込み中…</p>;
+    if (!room)
+        return (
+            <p className="text-center mt-10">ルームが見つかりませんでした</p>
+        );
 
     return (
-        <div className="p-4 max-w-5xl mx-auto space-y-6">
-            <Header />
+        <div className="flex flex-col min-h-screen">
+            {/* ヘッダー */}
+            <Header backHref="/room-list" title={room?.name} />
 
-            <div className="flex gap-6">
-                {/* メンバー一覧 */}
-                <div className="w-1/3">
-                    <MemberList members={members} />
-                </div>
-
+            <main className="flex-1 max-w-3xl mx-auto p-4 space-y-6">
                 {/* 卓一覧 */}
-                <div className="flex-1">
-                    <TableList
-                        tables={tables}
-                        roomCode={room.code || ""}
-                        onOpenCreateModal={() => setShowCreateModal(true)}
-                    />
+                <div className="bg-white rounded-xl shadow p-4">
+                    <h2 className="text-xl font-semibold mb-3">卓一覧</h2>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {tables.map((t) => (
+                            <div
+                                key={t.id}
+                                className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer flex justify-between items-center"
+                            >
+                                <span>{t.name}</span>
+                                <span className="text-sm text-gray-500">
+                                    {t.type}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    <button className="w-full mt-3 p-3 border-2 border-dashed rounded-lg text-gray-500 hover:bg-gray-50">
+                        ＋卓を追加
+                    </button>
                 </div>
-            </div>
 
-            {/* 卓作成モーダル */}
-            <CreateTableDialog
-                open={showCreateModal}
-                onOpenChange={setShowCreateModal}
-                roomId={room.id}
-                roomCode={room.code || ""}
-            />
+                {/* 成績サマリー */}
+                <div className="bg-white rounded-xl shadow p-4">
+                    <h2 className="text-xl font-semibold mb-3">成績サマリー</h2>
+                    <table className="w-full text-sm border-collapse">
+                        <thead>
+                            <tr className="border-b text-left">
+                                <th className="py-2 px-2">名前</th>
+                                <th className="py-2 px-2">最新の順位</th>
+                                <th className="py-2 px-2">最新の得点</th>
+                                <th className="py-2 px-2">合計</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {members.map((m) => (
+                                <tr key={m.id} className="border-b">
+                                    <td className="py-2 px-2">{m.name}</td>
+                                    <td className="py-2 px-2">118</td>
+                                    <td className="py-2 px-2">+50</td>
+                                    <td className="py-2 px-2">+100</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </main>
         </div>
     );
 }

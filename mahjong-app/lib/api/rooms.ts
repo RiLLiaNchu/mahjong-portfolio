@@ -1,5 +1,5 @@
 import { supabase } from "../supabase";
-import type { Room, RoomWithAuthor } from "@/types/room";
+import type { RoomWithAuthor } from "@/types/room";
 
 // rooms テーブルから情報取得
 export const fetchRooms = async (): Promise<RoomWithAuthor[]> => {
@@ -35,39 +35,27 @@ export const fetchRooms = async (): Promise<RoomWithAuthor[]> => {
 };
 
 // 共通: 現在ユーザーが他のルームに入っていたら退出して、指定ルームに参加する処理
-export const joinRoom = async (roomId: string, password?: string) => {
-    // 現在ログインしているユーザー取得
-    const { data, error: userError } = await supabase.auth.getUser();
-    const user = data?.user;
-    if (!user) throw new Error("ログインしてください");
-
-    // 他のルームに入っていたら退出
-    const { data: currentRooms } = await supabase
-        .from("room_members")
-        .select("room_id")
-        .eq("user_id", user.id);
-
-    if (currentRooms && currentRooms.length > 0) {
-        await supabase.from("room_members").delete().eq("user_id", user.id);
-    }
-
-    // パスワードありならチェック
-    if (password) {
-        const { data: roomData, error: roomError } = await supabase
-            .from("rooms")
-            .select("id")
-            .eq("id", roomId)
-            .eq("password", password)
-            .single();
-
-        if (roomError || !roomData) throw new Error("パスワードが違います");
-    }
-
-    // 参加情報を登録
-    await supabase.from("room_members").insert({
-        room_id: roomId,
-        user_id: user.id,
+export const joinRoom = async (
+    roomId: string,
+    password: string,
+    userId?: string | null,
+    nickname?: string | null
+) => {
+    const res = await fetch("/api/join-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            roomId,
+            password,
+            userId,
+            nickname,
+        }),
     });
 
-    return user;
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "ルーム参加に失敗しました");
+    }
+
+    return res.json();
 };

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RoomWithAuthor } from "@/types/room";
-import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/auth-context";
 import { joinRoom } from "@/lib/api/rooms";
 
 type Props = {
@@ -16,6 +16,7 @@ export const RoomPasswordModal: React.FC<Props> = ({
     onClose,
 }) => {
     const router = useRouter();
+    const { authUser, isGuest } = useAuth();
     const [passwordInput, setPasswordInput] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
@@ -25,7 +26,10 @@ export const RoomPasswordModal: React.FC<Props> = ({
         setError("");
 
         try {
-            await joinRoom(room.id, passwordInput);
+            // ゲストも authUser が null でも参加できる
+            const userId = authUser?.id ?? crypto.randomUUID();
+
+            await joinRoom(room.id, passwordInput, userId); // joinRoom 側も userId を受け取るように改修
             router.push(`/room/${room.id}`);
             onClose();
         } catch (err: any) {
@@ -55,7 +59,7 @@ export const RoomPasswordModal: React.FC<Props> = ({
                     onChange={(e) => {
                         if (/^\d{0,4}$/.test(e.target.value)) {
                             setPasswordInput(e.target.value);
-                            setError(""); // 入力中にエラーを消す
+                            setError("");
                         }
                     }}
                     className="w-full p-2 mb-4 border rounded"
@@ -77,6 +81,12 @@ export const RoomPasswordModal: React.FC<Props> = ({
                 >
                     キャンセル
                 </button>
+
+                {isGuest && (
+                    <p className="text-sm text-gray-500 mt-2 text-center">
+                        👤 ゲストユーザーとして参加しています
+                    </p>
+                )}
             </div>
         </div>
     );

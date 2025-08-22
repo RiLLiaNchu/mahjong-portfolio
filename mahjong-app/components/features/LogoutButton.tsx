@@ -1,56 +1,40 @@
 "use client";
 
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 
 export const LogoutButton: React.FC<{ onAfterLogout?: () => void }> = ({
     onAfterLogout,
 }) => {
     const router = useRouter();
+    const { signOut } = useAuth();
+    const [loading, setLoading] = useState(false);
 
     const handleLogout = async () => {
+        setLoading(true);
         try {
-            // セッション情報を取得
-            const {
-                data: { session },
-                error: sessionError,
-            } = await supabase.auth.getSession();
-
-            if (sessionError) {
-                console.error(
-                    "セッション取得中にエラー:",
-                    sessionError.message
-                );
-                return;
-            }
-
-            if (!session) {
-                console.warn("ログアウト前にセッションが存在しません。");
-                // 必要なら強制的にトップページに飛ばす
-                router.push("/");
-                return;
-            }
-
-            // セッションがある場合のみログアウト
-            const { error } = await supabase.auth.signOut();
-            if (error) {
-                console.error("ログアウト失敗:", error.message);
-            } else {
-                onAfterLogout?.();
-                router.push("/");
-            }
+            await signOut(); // authUser を null にリセット
+            onAfterLogout?.();
+            router.push("/"); // ← ここでトップページへ
         } catch (err) {
-            console.error("ログアウト処理中に予期せぬエラー:", err);
+            console.error("ログアウト中にエラー:", err);
+            router.push("/"); // 念のためトップへ
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <button
             onClick={handleLogout}
-            className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 text-left w-full"
+            disabled={loading}
+            className={`px-4 py-2 text-sm text-red-600 text-left w-full ${
+                loading ? "bg-gray-100 cursor-not-allowed" : "hover:bg-red-50"
+            }`}
             role="menuitem"
         >
-            ログアウト
+            {loading ? "ログアウト中..." : "ログアウト"}
         </button>
     );
 };
