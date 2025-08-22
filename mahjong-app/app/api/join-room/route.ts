@@ -6,7 +6,7 @@ import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
  * ルーム参加 API
  * - password チェック
  * - 他のルームに参加していたら退出
- * - room_members に user_id を登録
+ * - room_members に user_id を登録（重複は無視）
  */
 export async function POST(req: NextRequest) {
     try {
@@ -46,35 +46,37 @@ export async function POST(req: NextRequest) {
 
             if (fetchError) throw new Error(fetchError.message);
 
-            if (currentRooms && currentRooms.length > 0) {
-                const otherRooms = currentRooms.filter(
-                    (r) => r.room_id !== roomId
-                );
-                if (otherRooms.length > 0) {
-                    const { error: deleteError } = await supabaseAdmin
-                        .from("room_members")
-                        .delete()
-                        .in(
-                            "room_id",
-                            otherRooms.map((r) => r.room_id)
-                        )
-                        .eq("user_id", userId);
+            const otherRooms =
+                currentRooms?.filter((r) => r.room_id !== roomId) ?? [];
+            if (otherRooms.length > 0) {
+                const { error: deleteError } = await supabaseAdmin
+                    .from("room_members")
+                    .delete()
+                    .in(
+                        "room_id",
+                        otherRooms.map((r) => r.room_id)
+                    )
+                    .eq("user_id", userId);
 
-                    if (deleteError) throw new Error(deleteError.message);
-                }
+                if (deleteError) throw new Error(deleteError.message);
             }
         }
 
-        // ルーム参加情報を登録（nickname は不要）
+        // ルーム参加情報を upsert（重複は無視）
         const { data: joinData, error: joinError } = await supabaseAdmin
             .from("room_members")
-            .insert({ room_id: roomId, user_id: userId ?? null })
-            .select()
-            .single();
+            .upsert(
+                { room_id: roomId, user_id: userId ?? null },
+                { onConflict: "room_id,user_id", ignoreDuplicates: true }
+            )
+            .select(); // <- .single() は削除して配列で受け取る
 
         if (joinError) throw new Error(joinError.message);
 
-        return NextResponse.json({ success: true, member: joinData });
+        // 配列の先頭を返す（既存レコードがあればそれを返す）
+        const member = joinData?.[0] ?? null;
+
+        return NextResponse.json({ success: true, member });
     } catch (err: any) {
         console.error("join-room API error:", err);
         return NextResponse.json(
@@ -83,4 +85,3 @@ export async function POST(req: NextRequest) {
         );
     }
 }
-
