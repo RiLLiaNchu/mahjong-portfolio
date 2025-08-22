@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import { Header } from "@/components/ui/header";
-import { MemberList } from "@/components/features/room/MemberList";
-import { TableList } from "@/components/features/room/TableList";
-import type { PlayerStat } from "@/components/features/room/MemberList";
+import {
+    MemberList,
+    type PlayerStat,
+} from "@/components/features/room/MemberList";
+import { TableList, type Table } from "@/components/features/room/TableList";
 
 type Member = { id: string; name: string };
 type Room = { id: string; name: string; code: string };
-type Table = { id: string; name: string; type: string };
 type LatestGame = {
     id: string;
     table_id: string;
@@ -122,8 +123,11 @@ export default function RoomPage() {
 
             <main className="flex-1 max-w-3xl mx-auto p-4 space-y-6">
                 {/* 卓一覧 */}
-                {/* <TableList tables={tables} onAddTable{() => console.log("卓を追加")} /> */}
-                <div className="bg-white rounded-xl shadow p-4">
+                <TableList
+                    tables={tables}
+                    onAddTable={() => console.log("卓を追加")}
+                />
+                {/* <div className="bg-white rounded-xl shadow p-4">
                     <h2 className="text-xl font-semibold mb-3">卓一覧</h2>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                         {tables.map((t) => (
@@ -141,7 +145,7 @@ export default function RoomPage() {
                     <button className="w-full mt-3 p-3 border-2 border-dashed rounded-lg text-gray-500 hover:bg-gray-50">
                         ＋卓を追加
                     </button>
-                </div>
+                </div> */}
 
                 {/* メンバーリスト */}
                 <MemberList stats={stats} />

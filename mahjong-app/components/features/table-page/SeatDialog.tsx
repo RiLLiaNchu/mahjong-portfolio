@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { TablePlayer } from "@/types/table";
 
-export default function SeatDialog({
+export const SeatDialog = ({
     open,
     onClose,
     position,
@@ -35,7 +35,7 @@ export default function SeatDialog({
     players: TablePlayer[];
     currentUserId?: string | null;
     canForceLeave?: boolean; // true のときのみ強制退席ボタンを表示
-}) {
+}) => {
     // 確認モード: none | leave | force
     const [confirmMode, setConfirmMode] = useState<"none" | "leave" | "force">(
         "none"
@@ -147,25 +147,38 @@ export default function SeatDialog({
                                 <div className="pt-2">
                                     {confirmMode === "force" ? (
                                         <div className="space-y-2">
-                                            <div className="text-sm text-gray-600">本当にこのプレイヤーを退席させますか？</div>
+                                            <div className="text-sm text-gray-600">
+                                                本当にこのプレイヤーを退席させますか？
+                                            </div>
                                             <div className="flex gap-2">
                                                 <Button
                                                     variant="destructive"
                                                     onClick={() => {
                                                         // occupant が確実に存在する前提
-                                                        if (occupiedPlayer) onForceLeave(occupiedPlayer.user_id);
+                                                        if (occupiedPlayer)
+                                                            onForceLeave(
+                                                                occupiedPlayer.user_id
+                                                            );
                                                     }}
                                                     disabled={loading}
-                                                    >
-                                                        はい、強制退場させる
-                                                    </Button>
-                                                    <Button variant="outline" onClick={cancelConfirm} disabled={loading}>
-                                                        キャンセル
-                                                    </Button>
+                                                >
+                                                    はい、強制退場させる
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={cancelConfirm}
+                                                    disabled={loading}
+                                                >
+                                                    キャンセル
+                                                </Button>
                                             </div>
                                         </div>
                                     ) : (
-                                        <Button variant="destructive" onClick={handleConfirmForce} disabled={loading}>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleConfirmForce}
+                                            disabled={loading}
+                                        >
                                             この人を退席させる
                                         </Button>
                                     )}
@@ -187,4 +200,4 @@ export default function SeatDialog({
             </DialogContent>
         </Dialog>
     );
-}
+};

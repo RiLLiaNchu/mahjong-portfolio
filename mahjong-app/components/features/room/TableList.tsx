@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-type Table = {
+export type Table = {
     id: string;
     name: string; // 卓A, 卓B
     members: { id: string; name: string }[];
