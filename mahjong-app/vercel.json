@@ -1,7 +1,7 @@
 {
     "functions": {
-        "functions/cleanup_all/index.ts": {
-            "runtime": "edge"
+        "app/api/cleanup_all/route.ts": {
+            "runtime": "nodejs18.x"
         }
     },
     "crons": [
