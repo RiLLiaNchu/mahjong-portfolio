@@ -65,6 +65,10 @@ export const CreateTableDialog = ({
                 createdBy: userId,
             });
 
+            if (userId) {
+                await joinTable(data.table.id, userId);
+            }
+
             toast({ title: "卓を作成しました！" });
 
             if (userId) {
