@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type Profile = {
+export type Profile = {
     id: string;
     name?: string | null;
     email?: string | null;
@@ -124,8 +124,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const userData = await res.json();
 
             // Client 側の state 更新
-            setAuthUser({ id: userData.id, email: userData.email });
-            setProfile({ id: userData.id, name: userData.name });
+            setAuthUser({
+                id: userData.id,
+                name: userData.name,
+                email: userData.email,
+                is_guest: true,
+            });
+            setProfile({
+                id: userData.id,
+                name: userData.name ?? "ゲスト",
+                email: userData.email,
+                is_guest: true,
+                is_admin: false,
+            });
             setIsGuest(true);
 
             return userData;
@@ -167,9 +178,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const {
                     data: { session },
                 } = await supabase.auth.getSession();
+
                 if (session?.user) {
                     const userId = session.user.id;
-                    await fetchProfile(userId);
+                    const prof = await fetchProfile(userId);
                     setAuthUser({
                         id: userId,
                         name:
@@ -177,9 +189,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             session.user.email ??
                             "",
                         email: session.user.email,
-                        is_guest: false,
+                        is_guest: prof?.is_guest ?? false,
                     });
-                    setIsGuest(false);
+                    setIsGuest(prof?.is_guest ?? false);
                 }
             } catch (err) {
                 console.error("init auth error:", err);

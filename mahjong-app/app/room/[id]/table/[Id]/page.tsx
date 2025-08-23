@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlayerCard } from "@/components/features/table-page/PlayerCard";
 import { EmptyPlayerCard } from "@/components/features/table-page/EmptyPlayerCard";
-import SeatDialog from "@/components/features/table-page/SeatDialog";
+import { SeatDialog } from "@/components/features/table-page/SeatDialog";
 import { useAuth } from "@/contexts/auth-context";
 import { supabase } from "@/lib/supabase";
 import type { TablePlayer } from "@/types/table";
@@ -154,8 +154,8 @@ export default function TablePage(props: {
                             email: authUser.email ?? null,
                             // user_metadata の型が不確定なので any キャストして安全に取り出す
                             name:
-                                ((authUser as any).user_metadata?.name as string) ||
-                                "ゲストユーザー",
+                                ((authUser as any).user_metadata
+                                    ?.name as string) || "ゲストユーザー",
                         });
                     if (insertError) {
                         console.warn(

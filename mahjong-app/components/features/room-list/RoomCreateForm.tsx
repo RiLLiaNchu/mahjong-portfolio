@@ -44,7 +44,7 @@ export const RoomCreateForm = () => {
                     {
                         name: newRoomName,
                         password: newRoomPassword,
-                        created_by: user ? user.id : null, // 👈 ログインしていれば user.id、ゲストなら null
+                        created_by: user ? user.id : null,
                         expires_at: expiresAt.toISOString(),
                     },
                 ])

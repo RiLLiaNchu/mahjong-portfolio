@@ -5,22 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { createTable } from "@/lib/api/tables";
+import { createTable, joinTable } from "@/lib/api/tables";
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
+import type { Profile } from "@/contexts/auth-context";
 
 type CreateTableDialogProps = {
-    userName: string;
+    profile: Profile | null;
     roomId: string;
     onClose: () => void;
 };
 
 export const CreateTableDialog = ({
-    userName,
+    profile,
     roomId,
     onClose,
 }: CreateTableDialogProps) => {
     const router = useRouter();
+    const { toast } = useToast();
+
+    const userName = profile?.name || "名無し";
+    const userId = profile?.id || "";
+
     const [tableName, setTableName] = useState(`${userName}の卓`);
     const [playerCount, setPlayerCount] = useState<4 | 3>(4); // 四麻 or 三麻
     const [gameType, setGameType] = useState<"半荘" | "東風">("東風");
@@ -28,11 +34,26 @@ export const CreateTableDialog = ({
     const [umaSecond, setUmaSecond] = useState(5);
     const [umaThird, setUmaThird] = useState(-5);
     const [umaFourth, setUmaFourth] = useState(-10);
-    const { toast } = useToast();
+    const [creating, setCreating] = useState(false);
+    const [createError, setCreateError] = useState("");
 
     const handleCreate = async () => {
+        setCreateError("");
+
+        if (!tableName.trim()) {
+            setCreateError("卓名は必須です");
+            return;
+        }
+
+        if (!userId) {
+            setCreateError("ユーザー情報が取得できませんでした");
+            return;
+        }
+
+        setCreating(true);
+
         try {
-            await createTable({
+            const data = await createTable({
                 roomId,
                 tableName,
                 playerCount,
@@ -41,20 +62,39 @@ export const CreateTableDialog = ({
                 umaSecond,
                 umaThird,
                 umaFourth,
+                createdBy: userId,
             });
 
             toast({ title: "卓を作成しました！" });
-            onClose(); // 作成後にモーダル閉じる
-            router("/");
-        } catch (error) {
+
+            if (userId) {
+                await joinTable(data.id, userId);
+            }
+
+            onClose();
+            router.push(`/room/${roomId}/table/${data.id}`);
+        } catch (error: unknown) {
             console.error("卓作成エラー:", error);
 
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : "卓の作成に失敗しました";
+
             toast({
-                title: "卓の作成に失敗しました！",
+                title: message,
                 variant: "destructive",
             });
+        } finally {
+            setCreating(false);
         }
     };
+
+    const firstPlaceScore = -(
+        umaSecond +
+        umaThird +
+        (playerCount === 4 ? umaFourth ?? 0 : 0)
+    );
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -158,13 +198,7 @@ export const CreateTableDialog = ({
                         <span className="w-8">1位</span>
                         <Input
                             type="number"
-                            value={
-                                -(
-                                    umaSecond +
-                                    umaThird +
-                                    (playerCount === 4 ? umaFourth : 0)
-                                )
-                            }
+                            value={firstPlaceScore}
                             disabled
                             className="bg-gray-100 text-gray-500 cursor-not-allowed"
                         />
@@ -212,12 +246,22 @@ export const CreateTableDialog = ({
                         )}
                     </div>
                 </div>
+                {createError && (
+                    <div className="text-red-600 text-sm mb-2">
+                        {createError}
+                    </div>
+                )}
 
                 <div className="flex justify-between mt-4">
                     <Button variant="secondary" onClick={onClose}>
                         キャンセル
                     </Button>
-                    <Button onClick={handleCreate}>作成</Button>
+                    <Button
+                        disabled={!tableName.trim() || creating}
+                        onClick={handleCreate}
+                    >
+                        {creating ? "作成中..." : "作成"}
+                    </Button>
                 </div>
             </div>
         </div>

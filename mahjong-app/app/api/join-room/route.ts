@@ -2,12 +2,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
 
-/**
- * ルーム参加 API
- * - password チェック
- * - 他のルームに参加していたら退出
- * - room_members に user_id を登録（重複は無視）
- */
 export async function POST(req: NextRequest) {
     try {
         const { roomId, password, userId } = await req.json();
@@ -69,7 +63,7 @@ export async function POST(req: NextRequest) {
                 { room_id: roomId, user_id: userId ?? null },
                 { onConflict: "room_id,user_id", ignoreDuplicates: true }
             )
-            .select(); // <- .single() は削除して配列で受け取る
+            .select();
 
         if (joinError) throw new Error(joinError.message);
 

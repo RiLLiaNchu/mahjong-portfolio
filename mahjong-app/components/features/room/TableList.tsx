@@ -1,21 +1,59 @@
+// components/features/room/TableList.tsx
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { TableWithMembers } from "@/lib/api/tables";
+import { Profile } from "@/contexts/auth-context";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogTitle,
+} from "@/components/ui/dialog";
 
-export type Table = {
-    id: string;
-    name: string; // 卓A, 卓B
-    members: { id: string; name: string }[];
+type Props = {
+    profile: Profile | null;
+    tables: TableWithMembers[];
+    roomId: string;
+    onAddTable: () => void;
 };
 
-export const TableList = ({
+export const TableList: React.FC<Props> = ({
+    profile,
     tables,
+    roomId,
     onAddTable,
-}: {
-    tables: Table[];
-    onAddTable: () => void;
 }) => {
+    const router = useRouter();
+    const [selectedTable, setSelectedTable] = useState<TableWithMembers | null>(
+        null
+    );
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
+    const userId = profile?.id || "";
+
+    const handleCardClick = (table: TableWithMembers) =>
+        setSelectedTable(table);
+
+    const confirmJoin = async () => {
+        if (!selectedTable) return;
+        setLoading(true);
+        setError("");
+
+        try {
+            // joinTable 使うならここで呼ぶ
+            router.push(`/room/${roomId}/table/${selectedTable.id}`);
+        } catch (err: any) {
+            setError(err.message || "エラーが発生しました");
+        } finally {
+            setLoading(false);
+            setSelectedTable(null);
+        }
+    };
+
     return (
         <Card className="border-blue-200 max-w-screen-lg mx-auto">
             <CardHeader>
@@ -28,14 +66,15 @@ export const TableList = ({
                     {tables.map((table) => (
                         <Card
                             key={table.id}
-                            className="border rounded-xl shadow-sm hover:shadow-md transition"
+                            className="border rounded-xl shadow-sm hover:shadow-md transition cursor-pointer"
+                            onClick={() => handleCardClick(table)}
                         >
                             <CardHeader>
                                 <CardTitle className="text-lg font-semibold text-gray-800">
                                     {table.name}
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            {/* <CardContent>
                                 {table.members.length > 0 ? (
                                     <ul className="space-y-1 text-sm text-gray-700">
                                         {table.members.map((m) => (
@@ -55,11 +94,10 @@ export const TableList = ({
                                         メンバー未設定
                                     </p>
                                 )}
-                            </CardContent>
+                            </CardContent> */}
                         </Card>
                     ))}
 
-                    {/* 卓追加ボタン */}
                     <Button
                         onClick={onAddTable}
                         className="w-full py-8 text-lg bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
@@ -67,6 +105,36 @@ export const TableList = ({
                         + 卓を追加
                     </Button>
                 </div>
+
+                {selectedTable && (
+                    <Dialog
+                        open={true}
+                        onOpenChange={() => setSelectedTable(null)}
+                    >
+                        <DialogContent>
+                            <DialogTitle>
+                                {selectedTable.name} に参加しますか？
+                            </DialogTitle>
+                            <DialogDescription>
+                                現在の卓からは退出します。
+                            </DialogDescription>
+                            {error && (
+                                <p className="text-red-500 mt-2">{error}</p>
+                            )}
+                            <div className="flex justify-end gap-2 mt-4">
+                                <Button
+                                    onClick={confirmJoin}
+                                    disabled={loading}
+                                >
+                                    参加する
+                                </Button>
+                                <Button onClick={() => setSelectedTable(null)}>
+                                    キャンセル
+                                </Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                )}
             </CardContent>
         </Card>
     );

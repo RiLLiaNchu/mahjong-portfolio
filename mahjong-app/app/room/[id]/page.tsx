@@ -1,3 +1,4 @@
+// app/room/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -8,9 +9,10 @@ import {
     MemberList,
     type PlayerStat,
 } from "@/components/features/room/MemberList";
-import { TableList, type Table } from "@/components/features/room/TableList";
+import { TableList } from "@/components/features/room/TableList";
 import { CreateTableDialog } from "@/components/features/room/CreateTableDialog";
 import { useAuth } from "@/contexts/auth-context";
+import { fetchTables, TableWithMembers } from "@/lib/api/tables";
 
 type Member = { id: string; name: string };
 type Room = { id: string; name: string; code: string };
@@ -28,13 +30,12 @@ export default function RoomPage() {
 
     const [room, setRoom] = useState<Room | null>(null);
     const [members, setMembers] = useState<Member[]>([]);
-    const [tables, setTables] = useState<Table[]>([]);
+    const [tables, setTables] = useState<TableWithMembers[]>([]);
     const [latestGames, setLatestGames] = useState<LatestGame[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-    const userName = profile?.name || "ユーザー";
-    // stats は成績表用の配列
+    // stats はメンバーリスト用の配列
     const stats: PlayerStat[] = members.map((m) => {
         const latest = latestGames.find((g) => g.scores[m.id] !== undefined);
 
@@ -56,52 +57,57 @@ export default function RoomPage() {
         const loadRoomData = async () => {
             try {
                 // ルーム情報
-                const { data: roomData, error: roomError } = await supabase
+                const { data: roomData } = await supabase
                     .from("rooms")
                     .select("*")
                     .eq("id", roomId)
                     .single();
-                if (roomError) throw roomError;
-                setRoom(JSON.parse(JSON.stringify(roomData)));
+                setRoom(roomData);
 
                 // メンバー情報
                 const { data: membersData, error: membersError } =
                     await supabase
                         .from("room_members")
-                        .select("id, users(name)")
+                        .select(
+                            `
+                                id,
+                                users!room_members_user_id_fkey (
+                                id,
+                                name
+                                )
+                            `
+                        )
                         .eq("room_id", roomId);
+
                 if (membersError) throw membersError;
 
-                const membersWithNames: Member[] = (membersData as any[]).map(
-                    (m) => ({
-                        id: m.id,
-                        name: m.users?.name || "名無し",
+                const membersWithNames: Member[] = (membersData || []).map(
+                    (m: any) => ({
+                        id: m.users?.id ?? m.id, // users.id があればそれを、なければ fallback で m.id
+                        name: m.users?.name ?? "名無し",
                     })
                 );
-                setMembers(JSON.parse(JSON.stringify(membersWithNames)));
 
-                // 卓一覧
-                const { data: tablesData, error: tablesError } = await supabase
-                    .from("tables")
-                    .select("*")
-                    .eq("room_id", roomId);
-                if (tablesError) throw tablesError;
-                setTables(JSON.parse(JSON.stringify(tablesData)));
+                setMembers(membersWithNames);
+
+                // 卓一覧 + 卓メンバー
+                const tableData = await fetchTables(roomId);
+                setTables(tableData);
 
                 // 最新対局
                 const latestGamesData: LatestGame[] = await Promise.all(
-                    (tablesData || []).map(async (t) => {
-                        const { data: gameData, error: gameError } =
-                            await supabase
-                                .from("games")
-                                .select("*")
-                                .eq("table_id", t.id)
-                                .order("created_at", { ascending: false })
-                                .limit(1)
-                                .single();
-                        return !gameError && gameData ? gameData : null;
+                    (tableData || []).map(async (t) => {
+                        const { data: gameData } = await supabase
+                            .from("games")
+                            .select("*")
+                            .eq("table_id", t.id)
+                            .order("created_at", { ascending: false })
+                            .limit(1);
+
+                        return gameData?.[0] ?? null;
                     })
                 ).then((arr) => arr.filter((g): g is LatestGame => g !== null));
+
                 setLatestGames(latestGamesData);
             } catch (err: any) {
                 console.error("ルームデータ取得エラー:", err);
@@ -121,26 +127,24 @@ export default function RoomPage() {
 
     return (
         <div className="flex flex-col min-h-screen">
-            {/* ヘッダー */}
             <Header backHref="/room-list" title={room?.name} />
 
-            {/* モーダル表示 */}
             {isCreateDialogOpen && (
                 <CreateTableDialog
-                    userName={userName}
+                    profile={profile}
                     roomId={roomId}
                     onClose={() => setIsCreateDialogOpen(false)}
                 />
             )}
 
             <main className="flex-1 max-w-3xl mx-auto p-4 space-y-6">
-                {/* 卓一覧 */}
                 <TableList
+                    profile={profile}
                     tables={tables}
+                    roomId={roomId}
                     onAddTable={() => setIsCreateDialogOpen(true)}
                 />
 
-                {/* メンバーリスト */}
                 <MemberList stats={stats} />
             </main>
         </div>

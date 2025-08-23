@@ -34,12 +34,11 @@ export const fetchRooms = async (): Promise<RoomWithAuthor[]> => {
     return roomsWithAuthor;
 };
 
-// 共通: 現在ユーザーが他のルームに入っていたら退出して、指定ルームに参加する処理
+// 現在ユーザーが他のルームに入っていたら退出して、指定ルームに参加する処理
 export const joinRoom = async (
     roomId: string,
     password: string,
-    userId?: string | null,
-    nickname?: string | null
+    userId?: string | null
 ) => {
     const res = await fetch("/api/join-room", {
         method: "POST",
@@ -48,7 +47,6 @@ export const joinRoom = async (
             roomId,
             password,
             userId,
-            nickname,
         }),
     });
 
