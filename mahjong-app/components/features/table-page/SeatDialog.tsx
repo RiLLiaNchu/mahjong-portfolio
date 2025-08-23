@@ -5,6 +5,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogFooter,
+    DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { TablePlayer } from "@/types/table";
@@ -65,6 +66,9 @@ export const SeatDialog = ({
                     <DialogTitle>
                         {isEmpty ? `${position} に着席` : `${position} の席`}
                     </DialogTitle>
+                    <DialogDescription>
+                        プレイヤーの着席、BOTの追加、退席などを操作できます。
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 mt-2">
