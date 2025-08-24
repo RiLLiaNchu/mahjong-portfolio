@@ -23,7 +23,9 @@ export type TableWithMembers = {
     members: Member[];
 };
 
-export const fetchTables = async (roomId: string): Promise<TableWithMembers[]> => {
+export const fetchTables = async (
+    roomId: string
+): Promise<TableWithMembers[]> => {
     const { data, error } = await supabase
         .from("tables")
         .select(
@@ -56,15 +58,19 @@ export const fetchTables = async (roomId: string): Promise<TableWithMembers[]> =
     }));
 };
 
-
-export const joinTable = async (tableId: string, userId: string) => {
+// lib/api/tables.ts
+export const joinTable = async (
+    tableId: string,
+    userId?: string,
+    name?: string // ゲスト名用
+) => {
     try {
         const res = await fetch("/api/join-table", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ tableId, userId }),
+            body: JSON.stringify({ tableId, userId, name }),
         });
 
         if (!res.ok) {
@@ -73,7 +79,7 @@ export const joinTable = async (tableId: string, userId: string) => {
         }
 
         const data = await res.json();
-        return data; // 成功したら true など
+        return data; // { tableId, userId } が返る
     } catch (err: any) {
         console.error("フロント卓参加エラー:", err);
         throw err;

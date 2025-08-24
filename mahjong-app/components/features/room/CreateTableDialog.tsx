@@ -65,18 +65,16 @@ export const CreateTableDialog = ({
                 createdBy: userId,
             });
 
-            if (userId) {
-                await joinTable(data.table.id, userId);
+            const tableId = data?.id ?? data?.table?.id;
+            if (!tableId) {
+                throw new Error("卓作成結果に tableId がありません");
             }
+
+            await joinTable(tableId, userId);
 
             toast({ title: "卓を作成しました！" });
-
-            if (userId) {
-                await joinTable(data.id, userId);
-            }
-
             onClose();
-            router.push(`/room/${roomId}/table/${data.id}`);
+            router.push(`/room/${roomId}/table/${tableId}`);
         } catch (error: unknown) {
             console.error("卓作成エラー:", error);
 
