@@ -82,9 +82,9 @@ export default function HomePage() {
                                 variant="outline"
                                 className="py-6 bg-transparent"
                             >
-                                <Link href="/mydata">
+                                <Link href="/mypage">
                                     <BarChart3 className="h-5 w-5 mr-2" />
-                                    マイデータ
+                                    マイページ
                                 </Link>
                             </Button>
 
