@@ -37,15 +37,15 @@ export default function RoomPage() {
 
     // stats はメンバーリスト用の配列
     const stats: PlayerStat[] = members.map((m) => {
-        const latest = latestGames.find((g) => g.scores[m.id] !== undefined);
+        const latest = latestGames.find((g) => g.scores?.[m.id] !== undefined);
 
         return {
             player_id: m.id,
             name: m.name,
-            latest_score: latest ? latest.scores[m.id] : 0,
-            latest_rank: latest ? latest.ranks[m.id] : 0,
+            latest_score: latest?.scores?.[m.id] ?? 0,
+            latest_rank: latest?.ranks?.[m.id] ?? 0,
             total_score: latestGames.reduce(
-                (sum, g) => sum + (g.scores[m.id] || 0),
+                (sum, g) => sum + (g.scores?.[m.id] ?? 0),
                 0
             ),
         };
