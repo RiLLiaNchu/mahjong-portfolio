@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useParams } from "next/navigation";
 import { Header } from "@/components/ui/header";
-import { GameStat, GameStatsInput, GameWithStats, Member } from "@/types/game";
+import { GameWithStats, Member } from "@/types/game";
 import { GameStatsModal } from "@/components/features/table-page/GameStatsModal";
 import { ScoreSheet } from "@/components/features/table-page/ScoreSheet";
 import { useAuth } from "@/contexts/auth-context";
@@ -218,33 +218,38 @@ export default function TablePage() {
     };
 
     return (
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen bg-gradient-to-b from-stone-100 to-stone-200">
             <Header backHref={`/room/${table.room_id}`} title={table?.name} />
-            <main className="flex-1 max-w-3xl mx-auto p-4 space-y-6">
+
+            <main className="flex-1 max-w-3xl mx-auto p-6 space-y-8">
                 <button
                     onClick={handleStartGame}
-                    disabled={starting || members.length === 0} // メンバーがいなければ押せない
-                    className={`btn-green ${
-                        starting || members.length === 0
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                    }`}
+                    disabled={starting || members.length === 0}
+                    className={`px-6 py-3 rounded-xl font-semibold tracking-wider transition
+        ${
+            starting || members.length === 0
+                ? "bg-stone-400 text-stone-200 cursor-not-allowed"
+                : "bg-gradient-to-r from-red-700 to-red-600 text-white shadow-md hover:shadow-lg hover:scale-105"
+        }
+      `}
                 >
                     対局開始
                 </button>
 
-                <ScoreSheet
-                    members={members}
-                    gamesWithStats={gamesWithStats}
-                    initialBonuses={bonuses}
-                    onBonusChange={(b) => setBonuses(b)}
-                />
+                <div className="bg-white/70 rounded-2xl shadow-inner border border-stone-300 p-4">
+                    <ScoreSheet
+                        members={members}
+                        gamesWithStats={gamesWithStats}
+                        initialBonuses={bonuses}
+                        onBonusChange={(b) => setBonuses(b)}
+                    />
+                </div>
             </main>
 
             {currentGameStatsId && (
                 <GameStatsModal
                     gameStatsId={currentGameStatsId}
-                    userId={members[0].id} // 例: 最初のメンバー
+                    userId={members[0].id}
                     open={modalOpen}
                     onClose={() => setModalOpen(false)}
                 />

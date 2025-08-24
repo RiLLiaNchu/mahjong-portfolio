@@ -27,7 +27,12 @@ type HeaderProps = {
     }; // ステータスバッジ
 };
 
-const Header: React.FC<HeaderProps> = ({ title, backHref, icon, status }) => {
+export const Header: React.FC<HeaderProps> = ({
+    title,
+    backHref,
+    icon,
+    status,
+}) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
@@ -56,9 +61,9 @@ const Header: React.FC<HeaderProps> = ({ title, backHref, icon, status }) => {
 
     return (
         <header className="bg-white border-b border-gray-200 px-4 py-3">
-            <div className="max-w-screen-xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
+            <div className="max-w-screen-xl mx-auto flex items-center justify-between gap-2">
                 {/* 左エリア */}
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-3 flex-1">
                     {backHref && (
                         <Button
                             variant="ghost"
@@ -97,8 +102,8 @@ const Header: React.FC<HeaderProps> = ({ title, backHref, icon, status }) => {
                     </div>
                 </div>
 
-                {/* 右エリア */}
-                <div className="relative">
+                {/* 右エリア（ハンバーガー） */}
+                <div className="relative flex-shrink-0">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -110,7 +115,6 @@ const Header: React.FC<HeaderProps> = ({ title, backHref, icon, status }) => {
                         <MenuIcon className="h-5 w-5" />
                     </Button>
 
-                    {/* simple menu */}
                     {isMenuOpen && (
                         <div
                             ref={menuRef}
@@ -119,7 +123,6 @@ const Header: React.FC<HeaderProps> = ({ title, backHref, icon, status }) => {
                             className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-50"
                         >
                             <div className="flex flex-col py-1">
-                                {/* メニュー項目 */}
                                 <LogoutButton onAfterLogout={handleCloseMenu} />
                             </div>
                         </div>
@@ -129,5 +132,3 @@ const Header: React.FC<HeaderProps> = ({ title, backHref, icon, status }) => {
         </header>
     );
 };
-
-export { Header };

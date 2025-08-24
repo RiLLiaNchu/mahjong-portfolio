@@ -29,7 +29,7 @@ export const CreateTableDialog = ({
 
     const [tableName, setTableName] = useState(`${userName}の卓`);
     const [playerCount, setPlayerCount] = useState<4 | 3>(4); // 四麻 or 三麻
-    const [gameType, setGameType] = useState<"半荘" | "東風">("東風");
+    const [gameType, setGameType] = useState<"半荘" | "東風">("半荘");
     const [umaTop, setUmaTop] = useState(10);
     const [umaSecond, setUmaSecond] = useState(5);
     const [umaThird, setUmaThird] = useState(-5);
