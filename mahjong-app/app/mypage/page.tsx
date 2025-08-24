@@ -3,34 +3,20 @@
 import React, { useEffect, useState } from "react";
 import { Header } from "@/components/ui/header";
 import { AuthGuard } from "@/components/features/AuthGuard";
-import { UserStatsTable } from "@/components/features/my-page/UserStatsTable";
+import { UserStatsTabs } from "@/components/features/my-page/UserStatsTabs";
 import { useProfile } from "@/lib/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
-
-type GameStats = {
-    game_type: string;
-    game_length: string;
-    total_games: number;
-    avg_rank: number;
-    win_rate: number;
-    second_rate: number;
-    third_rate: number;
-    fourth_rate: number;
-    avg_score: number;
-    total_score: number;
-    agari_rate: number;
-    avg_agari: number;
-    deal_in_rate: number;
-    avg_deal_in: number;
-    riichi_rate: number;
-    furo_rate: number;
-    yakuman_count: number;
-    double_yakuman_count: number;
-};
+import { formatStats } from "@/lib/utils/formatStats";
+import { GameStats, StatsRecord } from "@/types/mypage";
 
 const MyPage: React.FC = () => {
     const { profile } = useProfile();
-    const [stats, setStats] = useState<GameStats[]>([]);
+    const [stats, setStats] = useState<StatsRecord>({
+        "yonma-hanchan": [],
+        "yonma-tonpu": [],
+        "sanma-hanchan": [],
+        "sanma-tonpu": [],
+    });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -44,7 +30,7 @@ const MyPage: React.FC = () => {
             if (error) {
                 console.error("戦績取得エラー:", error);
             } else {
-                setStats(data as GameStats[]);
+                setStats(formatStats(data as GameStats[]));
             }
             setLoading(false);
         };
@@ -71,12 +57,8 @@ const MyPage: React.FC = () => {
                 <div className="container mx-auto px-4 py-6 space-y-6">
                     {loading ? (
                         <p className="text-center text-gray-500">読み込み中…</p>
-                    ) : stats.length === 0 ? (
-                        <p className="text-center text-gray-500">
-                            まだ戦績がありません
-                        </p>
                     ) : (
-                        <UserStatsTable stats={stats} />
+                        <UserStatsTabs stats={stats} />
                     )}
                 </div>
             </div>

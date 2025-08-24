@@ -1,83 +1,120 @@
 "use client";
 
+import { GameStats } from "@/types/mypage";
 import React from "react";
 
-type GameStats = {
-  game_type: string;
-  game_length: string;
-  total_games: number;
-  avg_rank: number;
-  win_rate: number;
-  second_rate: number;
-  third_rate: number;
-  fourth_rate: number;
-  avg_score: number;
-  total_score: number;
-  agari_rate: number;
-  avg_agari: number;
-  deal_in_rate: number;
-  avg_deal_in: number;
-  riichi_rate: number;
-  furo_rate: number;
-  yakuman_count: number;
-  double_yakuman_count: number;
-};
-
 type Props = {
-  stats: GameStats[];
+    stats: GameStats[];
 };
 
 export const UserStatsTable: React.FC<Props> = ({ stats }) => {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[900px] text-sm border border-gray-200">
-        <thead className="bg-gray-100 sticky top-0">
-          <tr>
-            <th className="px-2 py-1 border">種別</th>
-            <th className="px-2 py-1 border">長さ</th>
-            <th className="px-2 py-1 border">対局数</th>
-            <th className="px-2 py-1 border">平均順位</th>
-            <th className="px-2 py-1 border">1位率</th>
-            <th className="px-2 py-1 border">2位率</th>
-            <th className="px-2 py-1 border">3位率</th>
-            <th className="px-2 py-1 border">4位率</th>
-            <th className="px-2 py-1 border">平均スコア</th>
-            <th className="px-2 py-1 border">総スコア</th>
-            <th className="px-2 py-1 border">和了率</th>
-            <th className="px-2 py-1 border">平均和了点</th>
-            <th className="px-2 py-1 border">放銃率</th>
-            <th className="px-2 py-1 border">平均放銃点</th>
-            <th className="px-2 py-1 border">立直率</th>
-            <th className="px-2 py-1 border">副露率</th>
-            <th className="px-2 py-1 border">役満回数</th>
-            <th className="px-2 py-1 border">W役満回数</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stats.map((s, idx) => (
-            <tr key={idx} className="even:bg-gray-50">
-              <td className="px-2 py-1 border">{s.game_type}</td>
-              <td className="px-2 py-1 border">{s.game_length}</td>
-              <td className="px-2 py-1 border">{s.total_games}</td>
-              <td className="px-2 py-1 border">{s.avg_rank.toFixed(2)}</td>
-              <td className="px-2 py-1 border">{(s.win_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{(s.second_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{(s.third_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{(s.fourth_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{s.avg_score.toFixed(1)}</td>
-              <td className="px-2 py-1 border">{s.total_score.toFixed(0)}</td>
-              <td className="px-2 py-1 border">{(s.agari_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{s.avg_agari.toFixed(1)}</td>
-              <td className="px-2 py-1 border">{(s.deal_in_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{s.avg_deal_in.toFixed(1)}</td>
-              <td className="px-2 py-1 border">{(s.riichi_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{(s.furo_rate * 100).toFixed(1)}%</td>
-              <td className="px-2 py-1 border">{s.yakuman_count}</td>
-              <td className="px-2 py-1 border">{s.double_yakuman_count}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+    const labels = [
+        "対局数：",
+        "平均順位：",
+        "1位率：",
+        "2位率：",
+        "3位率：",
+        "4位率：",
+        "平均スコア：",
+        "総スコア：",
+        "和了率：",
+        "平均和了点：",
+        "放銃率：",
+        "平均放銃点：",
+        "立直率：",
+        "副露率：",
+        "役満回数：",
+        "W役満回数：",
+    ];
+    return (
+        <div className="flex flex-col gap-4">
+            {stats.map((s, idx) => (
+                <div
+                    key={idx}
+                    className="border rounded-md p-2 flex flex-col md:table w-full"
+                >
+                    {labels.map((label, i) => (
+                        <div
+                            key={i}
+                            className="flex justify-between md:table-row border-b last:border-b-0 px-2 py-1"
+                        >
+                            <span className="font-medium md:table-cell text-center">
+                                {label}
+                            </span>
+                            <span className="md:table-cell">
+                                {(() => {
+                                    switch (i) {
+                                        case 0:
+                                            return s.total_games;
+                                        case 1:
+                                            return s.avg_rank.toFixed(2);
+                                        case 2:
+                                            return (
+                                                (s.win_rate * 100).toFixed(1) +
+                                                "%"
+                                            );
+                                        case 3:
+                                            return (
+                                                (s.second_rate * 100).toFixed(
+                                                    1
+                                                ) + "%"
+                                            );
+                                        case 4:
+                                            return (
+                                                (s.third_rate * 100).toFixed(
+                                                    1
+                                                ) + "%"
+                                            );
+                                        case 5:
+                                            return (
+                                                (s.fourth_rate * 100).toFixed(
+                                                    1
+                                                ) + "%"
+                                            );
+                                        case 6:
+                                            return s.avg_score.toFixed(1);
+                                        case 7:
+                                            return s.total_score.toFixed(0);
+                                        case 8:
+                                            return (
+                                                (s.agari_rate * 100).toFixed(
+                                                    1
+                                                ) + "%"
+                                            );
+                                        case 9:
+                                            return s.avg_agari.toFixed(1);
+                                        case 10:
+                                            return (
+                                                (s.deal_in_rate * 100).toFixed(
+                                                    1
+                                                ) + "%"
+                                            );
+                                        case 11:
+                                            return s.avg_deal_in.toFixed(1);
+                                        case 12:
+                                            return (
+                                                (s.riichi_rate * 100).toFixed(
+                                                    1
+                                                ) + "%"
+                                            );
+                                        case 13:
+                                            return (
+                                                (s.furo_rate * 100).toFixed(1) +
+                                                "%"
+                                            );
+                                        case 14:
+                                            return s.yakuman_count;
+                                        case 15:
+                                            return s.double_yakuman_count;
+                                        default:
+                                            return "";
+                                    }
+                                })()}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
 };

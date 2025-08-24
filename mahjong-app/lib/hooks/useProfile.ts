@@ -6,9 +6,6 @@ import { supabase } from "../supabase";
 export type Profile = {
     id: string;
     name: string;
-    gamesPlayed: number;
-    winRate: number;
-    averageScore: number;
 };
 
 export const useProfile = () => {
@@ -30,9 +27,6 @@ export const useProfile = () => {
                     setProfile({
                         id: "guest",
                         name: "ゲスト",
-                        gamesPlayed: 0,
-                        winRate: 0,
-                        averageScore: 0,
                     });
                     setLoading(false);
                     return;
@@ -50,17 +44,11 @@ export const useProfile = () => {
                     setProfile({
                         id: user.id,
                         name: user.email || "ユーザー",
-                        gamesPlayed: 0,
-                        winRate: 0,
-                        averageScore: 0,
                     });
                 } else {
                     setProfile({
                         id: data.id,
                         name: data.name,
-                        gamesPlayed: data.games_played,
-                        winRate: data.win_rate,
-                        averageScore: data.average_score,
                     });
                 }
 
