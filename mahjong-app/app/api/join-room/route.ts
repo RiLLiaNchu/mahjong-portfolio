@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
 
             const otherRooms =
                 currentRooms?.filter((r) => r.room_id !== roomId) ?? [];
+                
             if (otherRooms.length > 0) {
                 const { error: deleteError } = await supabaseAdmin
                     .from("room_members")

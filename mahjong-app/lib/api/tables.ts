@@ -58,19 +58,12 @@ export const fetchTables = async (
     }));
 };
 
-// lib/api/tables.ts
-export const joinTable = async (
-    tableId: string,
-    userId?: string,
-    name?: string // ゲスト名用
-) => {
+export const joinTable = async (tableId: string, userId?: string | null) => {
     try {
         const res = await fetch("/api/join-table", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ tableId, userId, name }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tableId, userId }),
         });
 
         if (!res.ok) {
@@ -79,7 +72,7 @@ export const joinTable = async (
         }
 
         const data = await res.json();
-        return data; // { tableId, userId } が返る
+        return data; // 成功したら true など
     } catch (err: any) {
         console.error("フロント卓参加エラー:", err);
         throw err;

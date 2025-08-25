@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { TableWithMembers } from "@/lib/api/tables";
-import { Profile } from "@/contexts/auth-context";
+import { joinTable, TableWithMembers } from "@/lib/api/tables";
+import { Profile, useAuth } from "@/contexts/auth-context";
 import {
     Dialog,
     DialogContent,
@@ -28,29 +28,33 @@ export const TableList: React.FC<Props> = ({
     onAddTable,
 }) => {
     const router = useRouter();
+    const { authUser, isGuest } = useAuth();
     const [selectedTable, setSelectedTable] = useState<TableWithMembers | null>(
         null
     );
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const userId = profile?.id || "";
 
     const handleCardClick = (table: TableWithMembers) =>
         setSelectedTable(table);
 
-    const confirmJoin = async () => {
-        if (!selectedTable) return;
+    const handleJoinTable = async (table: TableWithMembers) => {
         setLoading(true);
         setError("");
 
         try {
-            // joinTable 使うならここで呼ぶ
-            router.push(`/room/${roomId}/table/${selectedTable.id}`);
+            // ユーザーIDと名前を取得
+            const userId = authUser?.id ?? crypto.randomUUID();
+
+            await joinTable(table.id, userId);
+
+            router.push(`/room/${roomId}/table/${table.id}`);
+            setSelectedTable(null);
         } catch (err: any) {
-            setError(err.message || "エラーが発生しました");
+            console.error("フロント卓参加エラー:", err);
+            setError(err.message || "卓参加に失敗しました");
         } finally {
             setLoading(false);
-            setSelectedTable(null);
         }
     };
 
@@ -123,7 +127,9 @@ export const TableList: React.FC<Props> = ({
                             )}
                             <div className="flex justify-end gap-2 mt-4">
                                 <Button
-                                    onClick={confirmJoin}
+                                    onClick={() =>
+                                        handleJoinTable(selectedTable)
+                                    }
                                     disabled={loading}
                                 >
                                     参加する

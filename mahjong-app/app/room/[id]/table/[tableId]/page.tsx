@@ -1,4 +1,3 @@
-// table/[tableId]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -39,26 +38,29 @@ export default function TablePage() {
         null
     );
     const [loading, setLoading] = useState(true);
+    const userId = profile?.id;
 
     useEffect(() => {
-        if (!tableId || !profile?.id) return;
+        if (!tableId || !userId) return;
 
         const loadData = async () => {
+            setLoading(true);
+
             try {
                 // 自分を table_members に追加（存在しなければ）
-                const { data: existing } = await supabase
-                    .from("table_members")
-                    .select("*")
-                    .eq("table_id", tableId)
-                    .eq("user_id", profile.id)
-                    .maybeSingle();
+                // const { data: existing } = await supabase
+                //     .from("table_members")
+                //     .select("*")
+                //     .eq("table_id", tableId)
+                //     .eq("user_id", userId)
+                //     .maybeSingle();
 
-                if (!existing) {
-                    await supabase.from("table_members").insert({
-                        table_id: tableId,
-                        user_id: profile.id,
-                    });
-                }
+                // if (!existing) {
+                //     await supabase.from("table_members").insert({
+                //         table_id: tableId,
+                //         user_id: userId,
+                //     });
+                // }
 
                 // テーブル情報
                 const { data: tableData } = await supabase
@@ -246,10 +248,10 @@ export default function TablePage() {
                 </div>
             </main>
 
-            {currentGameStatsId && (
+            {userId && currentGameStatsId && (
                 <GameStatsModal
                     gameStatsId={currentGameStatsId}
-                    userId={members[0].id}
+                    userId={userId}
                     open={modalOpen}
                     onClose={() => setModalOpen(false)}
                 />
