@@ -24,7 +24,8 @@ const MyPage: React.FC = () => {
         if (!profile?.id) return;
 
         const fetchStats = async () => {
-            if (!profile?.id || profile.id === "guest") {
+            const isGuest = profile.id === "guest";
+            if (isGuest) {
                 setStats({
                     "yonma-hanchan": [],
                     "yonma-tonpu": [],
@@ -39,9 +40,7 @@ const MyPage: React.FC = () => {
             try {
                 const { data, error } = await supabase.rpc(
                     "get_user_game_stats",
-                    {
-                        uid: profile.id,
-                    }
+                    { uid: profile.id }
                 );
 
                 if (error) {

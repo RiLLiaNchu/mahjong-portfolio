@@ -34,22 +34,34 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
+        // エラーメッセージを判定する関数
+        const getErrorMessage = (msg?: string) => {
+            if (!msg) return "ログイン中にエラーが発生しました。";
+            return msg.toLowerCase().includes("invalid login credentials")
+                ? "メールアドレスまたはパスワードが正しくありません。"
+                : "ログイン中に予期せぬエラーが発生しました。";
+        };
+
         try {
-            await signIn(email, password);
+            await signIn(email, password); // Supabase 等のログイン処理
+            // 成功時に軽くメッセージを出したい場合
+            toast({
+                title: "ログイン成功✨",
+                description: "ホーム画面に移動します",
+            });
             router.push("/home");
         } catch (err: any) {
+            const msg = getErrorMessage(err?.message);
+            // 画面上とトーストの両方で表示
+            setError(msg);
             toast({
                 variant: "destructive",
                 title: "ログイン失敗",
-                description: err?.message
-                    ?.toLowerCase?.()
-                    .includes("invalid login credentials")
-                    ? "メールアドレスまたはパスワードが正しくありません。"
-                    : "ログイン中に予期せぬエラーが発生しました。",
+                description: msg,
             });
-            setError(err.message || "エラーが発生しました");
+            console.error("ログインエラー:", err);
         } finally {
-            setLoading(false); // ここは必ず呼ぶ！
+            setLoading(false); // ここは必ず呼ぶ
         }
     };
 
