@@ -20,7 +20,6 @@ type AuthContextType = {
     isAdmin: boolean;
     signIn: (email: string, password: string) => Promise<void>;
     signUp: (email: string, password: string, name: string) => Promise<void>;
-    signInAsGuest: (name: string) => Promise<void>;
     signOut: () => Promise<void>;
     refreshProfile: () => Promise<void>;
 };
@@ -77,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     const signUp = async (email: string, password: string, name: string) => {
+        // 1️⃣ サインアップ
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
@@ -87,63 +87,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const userId = data.user.id;
 
-        const { data: userData, error: insertError } = await supabase
-            .from("users")
-            .upsert({
-                id: userId,
-                name,
-                email,
-                is_admin: false,
-                is_guest: false,
-            })
-            .select()
-            .single();
+        // 2️⃣ サーバー経由で users テーブルに insert
+        const res = await fetch("/api/create-user", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: userId, name, email }),
+        });
+        if (!res.ok) throw new Error("ユーザー作成に失敗しました");
 
-        if (insertError) throw insertError;
+        // 3️⃣ fetchProfile で安全に読み込み
+        const prof = await fetchProfile(userId);
 
-        setAuthUser(userData);
-        setProfile(userData);
-        setIsGuest(false);
-    };
-
-    const signInAsGuest = async (guestNickname: string) => {
-        try {
-            const res = await fetch("/api/guest-signin", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name: guestNickname }),
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(
-                    errData.error || "ゲストログインに失敗しました"
-                );
-            }
-
-            const userData = await res.json();
-
-            // Client 側の state 更新
-            setAuthUser({
-                id: userData.id,
-                name: userData.name,
-                email: userData.email,
-                is_guest: true,
-            });
-            setProfile({
-                id: userData.id,
-                name: userData.name ?? "ゲスト",
-                email: userData.email,
-                is_guest: true,
-                is_admin: false,
-            });
-            setIsGuest(true);
-
-            return userData;
-        } catch (err: any) {
-            console.error("ゲスト同期APIエラー", err);
-            throw err;
-        }
+        setAuthUser({
+            id: userId,
+            name,
+            email,
+            is_guest: prof?.is_guest ?? false,
+        });
     };
 
     const signOut = async () => {
@@ -212,7 +172,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 isAdmin,
                 signIn,
                 signUp,
-                signInAsGuest,
                 signOut,
                 refreshProfile,
             }}

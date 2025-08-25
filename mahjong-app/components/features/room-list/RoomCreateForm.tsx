@@ -2,12 +2,13 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { joinRoom } from "@/lib/api/rooms";
+import { useAuth } from "@/contexts/auth-context";
 
 export const RoomCreateForm = () => {
-    const [showCreateModal, setShowCreateModal] = useState(false);
+    const { authUser } = useAuth();
     const router = useRouter();
 
-    // ルーム作成モーダル用ステート
+    const [showCreateModal, setShowCreateModal] = useState(false);
     const [newRoomName, setNewRoomName] = useState("");
     const [newRoomPassword, setNewRoomPassword] = useState("");
     const [creating, setCreating] = useState(false);
@@ -15,18 +16,24 @@ export const RoomCreateForm = () => {
 
     // ルーム作成処理
     const handleCreateRoom = async () => {
+        if (!authUser) {
+            alert("ログインしてください");
+            return;
+        }
         setCreateError("");
 
         if (!newRoomName.trim()) {
             setCreateError("ルーム名は必須です");
             return;
         }
+
         if (!/^\d{4}$/.test(newRoomPassword)) {
             setCreateError("パスワードは4桁の数字で入力してください");
             return;
         }
 
         setCreating(true);
+        setCreateError("");
 
         try {
             const {
@@ -38,23 +45,21 @@ export const RoomCreateForm = () => {
             expiresAt.setHours(expiresAt.getHours() + 24);
 
             // ルーム作成
-            const { data, error } = await supabase
-                .from("rooms")
-                .insert([
-                    {
-                        name: newRoomName,
-                        password: newRoomPassword,
-                        created_by: user ? user.id : null,
-                        expires_at: expiresAt.toISOString(),
-                    },
-                ])
-                .select("id")
-                .single();
+            const res = await fetch("/api/create-room", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: newRoomName,
+                    password: newRoomPassword,
+                    createdBy: authUser.id,
+                    expiresAt: expiresAt.toISOString(),
+                }),
+            });
 
-            if (error) throw error;
+            const data = await res.json();
 
             // 作成後に参加
-            await joinRoom(data.id, newRoomPassword, user?.id ?? null);
+            await joinRoom(data.id, newRoomPassword, authUser.id);
 
             // フォームを閉じてリセット
             setShowCreateModal(false);

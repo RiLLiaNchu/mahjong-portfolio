@@ -89,21 +89,13 @@ export default function TopPage() {
                         asChild
                         className="w-full bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
                     >
-                        <Link href="/guest">ゲストで使ってみる</Link>
-                    </Button>
-
-                    <Button
-                        asChild
-                        variant="outline"
-                        className="w-full border-green-600 text-green-600 hover:bg-green-50 py-6 text-lg bg-transparent"
-                    >
                         <Link href="/login">ログイン</Link>
                     </Button>
 
                     <Button
                         asChild
                         variant="outline"
-                        className="w-full py-6 text-lg bg-transparent"
+                        className="w-full border-green-600 text-green-600 hover:bg-green-50 py-6 text-lg bg-transparent"
                     >
                         <Link href="/signup">新規登録</Link>
                     </Button>

@@ -47,21 +47,6 @@ export default function TablePage() {
             setLoading(true);
 
             try {
-                // 自分を table_members に追加（存在しなければ）
-                // const { data: existing } = await supabase
-                //     .from("table_members")
-                //     .select("*")
-                //     .eq("table_id", tableId)
-                //     .eq("user_id", userId)
-                //     .maybeSingle();
-
-                // if (!existing) {
-                //     await supabase.from("table_members").insert({
-                //         table_id: tableId,
-                //         user_id: userId,
-                //     });
-                // }
-
                 // テーブル情報
                 const { data: tableData } = await supabase
                     .from("tables")
@@ -131,8 +116,7 @@ export default function TablePage() {
         return <p className="text-center mt-10">卓が見つかりませんでした</p>;
 
     const handleStartGame = async () => {
-        if (!table) return;
-        if (members.length === 0) {
+        if (!table || members.length === 0) {
             alert("まだメンバーが揃っていません！");
             return;
         }
@@ -140,74 +124,26 @@ export default function TablePage() {
         setStarting(true);
 
         try {
-            // 最終ゲーム番号取得
-            const { data: lastGame, error: lastGameError } = await supabase
-                .from("games")
-                .select("game_number")
-                .eq("table_id", table.id)
-                .order("game_number", { ascending: false })
-                .limit(1)
-                .maybeSingle();
+            // API 経由でゲーム作成＆stats作成
+            const res = await fetch("/api/create-game", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    tableId: table.id,
+                    members, // [{id: "user1"}, {id: "user2"}, ...]
+                }),
+            });
 
-            if (lastGameError) throw lastGameError;
-
-            const nextGameNumber = lastGame?.game_number
-                ? lastGame.game_number + 1
-                : 1;
-
-            // 新しいゲーム作成
-            const { data: newGame, error: newGameError } = await supabase
-                .from("games")
-                .insert([
-                    {
-                        table_id: table.id,
-                        game_number: nextGameNumber, // ←ここ追加
-                        created_at: new Date().toISOString(),
-                    },
-                ])
-                .select("*")
-                .single();
-
-            if (newGameError || !newGame) {
-                console.error("新しいゲーム作成失敗:", newGameError);
-                alert("対局を開始できませんでした");
-                setStarting(false);
-                return;
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "ゲーム作成失敗");
             }
 
-            // stats 作成
-            const statsInserts = members.map((m) => ({
-                game_id: newGame.id,
-                user_id: m.id,
-                rank: 0,
-                point: 0,
-                score: 0,
-                chip: 0,
-                agari_count: 0,
-                agari_total: 0,
-                deal_in_count: 0,
-                deal_in_total: 0,
-                riichi_count: 0,
-                furo_count: 0,
-                kyoku_count: 0,
-                yakuman_count: 0,
-                double_yakuman_count: 0,
-            }));
-
-            const { data: statsCreated, error: statsError } = await supabase
-                .from("game_stats")
-                .insert(statsInserts)
-                .select("id, user_id");
-
-            if (statsError) {
-                console.error("game_stats 作成失敗:", statsError);
-                alert("プレイヤーデータの初期化に失敗しました");
-                return;
-            }
+            const { newGame, stats } = await res.json();
 
             // 自分の game_stats.id を取得
-            const myStatsId = statsCreated.find(
-                (s) => s.user_id === profile?.id
+            const myStatsId = stats.find(
+                (s: any) => s.user_id === profile?.id
             )?.id;
             setCurrentGameStatsId(myStatsId);
             setModalOpen(true);

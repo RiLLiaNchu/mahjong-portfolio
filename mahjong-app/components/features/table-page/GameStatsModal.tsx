@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GameStatsInput } from "@/lib/api/gameStats";
-import { supabase } from "@/lib/supabase";
+import { GameStatsInput, updateGameStats } from "@/lib/api/gameStats";
 
 type Props = {
     gameStatsId: string;
-    userId: string; // 必須ユーザーIDを明示
+    userId: string;
     initialData?: Partial<GameStatsInput>;
     open: boolean;
     onClose: () => void;
@@ -44,38 +43,12 @@ export const GameStatsModal = ({
         }
 
         try {
-            // 更新前に対象レコードが存在するか確認
-            const { data: existingStats, error: fetchError } = await supabase
-                .from("game_stats")
-                .select("*")
-                .eq("id", gameStatsId)
-                .maybeSingle();
-
-            if (fetchError) throw fetchError;
-            if (!existingStats) {
-                alert("対象のゲームデータが存在しません");
-                console.error("game_stats が存在しない:", gameStatsId);
-                return;
-            }
-
-            // 更新処理
-            const { data, error } = await supabase
-                .from("game_stats")
-                .update(form)
-                .eq("id", gameStatsId)
-                .maybeSingle();
-
-            if (error) {
-                console.error("game_stats 更新エラー:", error);
-                alert("保存に失敗しました💦");
-                return;
-            }
-
-            console.log("更新成功:", data);
+            await updateGameStats(gameStatsId, form);
+            console.log("更新成功");
             onClose(); // モーダル閉じる
-        } catch (err) {
+        } catch (err: any) {
             console.error("保存処理エラー:", err);
-            alert("保存中にエラーが発生しました💦");
+            alert(err.message || "保存中にエラーが発生しました💦");
         }
     };
 

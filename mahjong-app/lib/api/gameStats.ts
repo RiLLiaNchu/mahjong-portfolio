@@ -24,22 +24,21 @@ type GameModalProps = {
 };
 
 export type GameStatsInput = {
-  gameStatsId?: string;
-  user_id: string;
-  agari_count: number;
-  agari_total: number;
-  deal_in_count: number;
-  deal_in_total: number;
-  riichi_count: number;
-  furo_count: number;
-  kyoku_count: number;
-  rank: number;
-  point: number;
-  score: number;
-  yakuman_count: number;
-  double_yakuman_count: number;
+    gameStatsId?: string;
+    user_id: string;
+    agari_count: number;
+    agari_total: number;
+    deal_in_count: number;
+    deal_in_total: number;
+    riichi_count: number;
+    furo_count: number;
+    kyoku_count: number;
+    rank: number;
+    point: number;
+    score: number;
+    yakuman_count: number;
+    double_yakuman_count: number;
 };
-
 
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
@@ -138,20 +137,24 @@ export const GameInputModal = ({
     };
 };
 
-export const updateGameStats = async (input: GameStatsInput) => {
-    const { gameStatsId, ...fields } = input;
+export const updateGameStats = async (gameStatsId: string, formData: any) => {
+    try {
+        const res = await fetch("/api/update-game-stats", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ gameStatsId, formData }),
+        });
 
-    const { data, error } = await supabase
-        .from("game_stats")
-        .update(fields)
-        .eq("id", gameStatsId)
-        .select()
-        .single();
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(
+                errData.error || "ゲームデータの更新に失敗しました"
+            );
+        }
 
-    if (error) {
-        console.error("game_stats 更新エラー:", error);
-        throw error;
+        const data = await res.json();
+        return data;
+    } catch (err: any) {
+        throw err;
     }
-
-    return data;
 };

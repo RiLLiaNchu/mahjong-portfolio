@@ -17,22 +17,55 @@ const MyPage: React.FC = () => {
         "sanma-hanchan": [],
         "sanma-tonpu": [],
     });
+    const [errorMessage, setErrorMessage] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         if (!profile?.id) return;
 
         const fetchStats = async () => {
-            const { data, error } = await supabase.rpc("get_user_game_stats", {
-                uid: profile.id,
-            });
-
-            if (error) {
-                console.error("戦績取得エラー:", error);
-            } else {
-                setStats(formatStats(data as GameStats[]));
+            if (!profile?.id || profile.id === "guest") {
+                setStats({
+                    "yonma-hanchan": [],
+                    "yonma-tonpu": [],
+                    "sanma-hanchan": [],
+                    "sanma-tonpu": [],
+                });
+                setErrorMessage("未認証ユーザーは戦績を表示できません");
+                setLoading(false);
+                return;
             }
-            setLoading(false);
+
+            try {
+                const { data, error } = await supabase.rpc(
+                    "get_user_game_stats",
+                    {
+                        uid: profile.id,
+                    }
+                );
+
+                if (error) {
+                    console.error("戦績取得エラー:", error);
+                    setStats({
+                        "yonma-hanchan": [],
+                        "yonma-tonpu": [],
+                        "sanma-hanchan": [],
+                        "sanma-tonpu": [],
+                    });
+                } else {
+                    setStats(formatStats(data as GameStats[]));
+                }
+            } catch (err: any) {
+                console.error("戦績取得中の例外:", err);
+                setStats({
+                    "yonma-hanchan": [],
+                    "yonma-tonpu": [],
+                    "sanma-hanchan": [],
+                    "sanma-tonpu": [],
+                });
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchStats();
@@ -59,6 +92,11 @@ const MyPage: React.FC = () => {
                         <p className="text-center text-gray-500">読み込み中…</p>
                     ) : (
                         <UserStatsTabs stats={stats} />
+                    )}
+                    {errorMessage && (
+                        <p className="text-red-500 text-sm mt-2">
+                            {errorMessage}
+                        </p>
                     )}
                 </div>
             </div>

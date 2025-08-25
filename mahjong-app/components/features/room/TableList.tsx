@@ -44,14 +44,13 @@ export const TableList: React.FC<Props> = ({
 
         try {
             // ユーザーIDと名前を取得
-            const userId = authUser?.id ?? crypto.randomUUID();
+            const userId = authUser?.id;
 
             await joinTable(table.id, userId);
 
             router.push(`/room/${roomId}/table/${table.id}`);
             setSelectedTable(null);
         } catch (err: any) {
-            console.error("フロント卓参加エラー:", err);
             setError(err.message || "卓参加に失敗しました");
         } finally {
             setLoading(false);
@@ -78,27 +77,6 @@ export const TableList: React.FC<Props> = ({
                                     {table.name}
                                 </CardTitle>
                             </CardHeader>
-                            {/* <CardContent>
-                                {table.members.length > 0 ? (
-                                    <ul className="space-y-1 text-sm text-gray-700">
-                                        {table.members.map((m) => (
-                                            <li
-                                                key={m.id}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <span className="text-green-600">
-                                                    ●
-                                                </span>
-                                                {m.name}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-gray-400 text-sm">
-                                        メンバー未設定
-                                    </p>
-                                )}
-                            </CardContent> */}
                         </Card>
                     ))}
 
