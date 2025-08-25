@@ -2,20 +2,12 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Menu as MenuIcon } from "lucide-react";
+import { ArrowLeft, HomeIcon, Menu as MenuIcon } from "lucide-react";
 import { Button } from "./button";
 import { Badge } from "./badge";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { LogoutButton } from "../features/LogoutButton";
-
-/**
- * Header component
- * - backHref があれば戻るボタンを出す（ページ固有）
- * - icon を渡せばタイトル左に表示（ホームで使う）
- * - ログアウトボタンは固定表示
- * - モバイル対応済み
- */
 
 type HeaderProps = {
     title?: React.ReactNode;
@@ -103,7 +95,21 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
 
                 {/* 右エリア（ハンバーガー） */}
-                <div className="relative flex-shrink-0">
+                {/* 右エリア（ホーム + ハンバーガー） */}
+                <div className="relative flex items-center gap-2 flex-shrink-0">
+                    {/* ホームアイコン */}
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        asChild
+                        aria-label="ホームへ戻る"
+                    >
+                        <Link href="/home">
+                            <HomeIcon className="h-5 w-5" />
+                        </Link>
+                    </Button>
+
+                    {/* ハンバーガーメニュー */}
                     <Button
                         variant="ghost"
                         size="icon"

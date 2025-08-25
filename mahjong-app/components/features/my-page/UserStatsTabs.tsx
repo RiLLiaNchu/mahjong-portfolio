@@ -10,45 +10,49 @@ type Props = {
 
 export function UserStatsTabs({ stats }: Props) {
     return (
-        <Tabs defaultValue="yonma-hanchan" className="w-full">
-            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full mb-12">
-                <TabsTrigger value="yonma-hanchan">四麻 半荘</TabsTrigger>
-                <TabsTrigger value="yonma-tonpu">四麻 東風</TabsTrigger>
-                <TabsTrigger value="sanma-hanchan">三麻 半荘</TabsTrigger>
-                <TabsTrigger value="sanma-tonpu">三麻 東風</TabsTrigger>
+        <Tabs defaultValue="yonma-hanchan" className="w-full pb-4">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 gap-2 w-full mb-12 md:mb-4 bg-rose-50 rounded-xl p-1 shadow-inner">
+                <TabsTrigger
+                    value="yonma-hanchan"
+                    className="bg-white hover:bg-rose-100 rounded-lg shadow-sm"
+                >
+                    四麻 半荘
+                </TabsTrigger>
+                <TabsTrigger
+                    value="yonma-tonpu"
+                    className="bg-white hover:bg-rose-100 rounded-lg shadow-sm"
+                >
+                    四麻 東風
+                </TabsTrigger>
+                <TabsTrigger
+                    value="sanma-hanchan"
+                    className="bg-white hover:bg-rose-100 rounded-lg shadow-sm"
+                >
+                    三麻 半荘
+                </TabsTrigger>
+                <TabsTrigger
+                    value="sanma-tonpu"
+                    className="bg-white hover:bg-rose-100 rounded-lg shadow-sm"
+                >
+                    三麻 東風
+                </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="yonma-hanchan">
-                {stats["yonma-hanchan"]?.length ? (
-                    <UserStatsTable stats={stats["yonma-hanchan"]!} />
-                ) : (
-                    <p className="text-sm text-gray-500">データがありません</p>
-                )}
-            </TabsContent>
-
-            <TabsContent value="yonma-tonpu">
-                {stats["yonma-tonpu"] ? (
-                    <UserStatsTable stats={stats["yonma-tonpu"]!} />
-                ) : (
-                    <p className="text-sm text-gray-500">データがありません</p>
-                )}
-            </TabsContent>
-
-            <TabsContent value="sanma-hanchan">
-                {stats["sanma-hanchan"] ? (
-                    <UserStatsTable stats={stats["sanma-hanchan"]!} />
-                ) : (
-                    <p className="text-sm text-gray-500">データがありません</p>
-                )}
-            </TabsContent>
-
-            <TabsContent value="sanma-tonpu">
-                {stats["sanma-tonpu"] ? (
-                    <UserStatsTable stats={stats["sanma-tonpu"]!} />
-                ) : (
-                    <p className="text-sm text-gray-500">データがありません</p>
-                )}
-            </TabsContent>
+            {Object.entries(stats).map(([key, data]) => (
+                <TabsContent
+                    key={key}
+                    value={key}
+                    className="bg-rose-50 p-4 rounded-xl shadow-md"
+                >
+                    {data?.length ? (
+                        <UserStatsTable stats={data} />
+                    ) : (
+                        <p className="text-sm text-gray-500 text-center">
+                            対局してデータを集めよう
+                        </p>
+                    )}
+                </TabsContent>
+            ))}
         </Tabs>
     );
 }

@@ -93,34 +93,27 @@ export const HomeStatsSelector: React.FC<HomeStatsSelectorProps> = ({
     return (
         <div className="space-y-4">
             {/* 選択ボックス */}
-            <div className="flex gap-4">
-                <select
-                    value={gameType}
-                    onChange={(e) =>
-                        setGameType(e.target.value as "sanma" | "yonma")
-                    }
-                    className="border rounded px-2 py-1"
-                >
-                    <option value="sanma">三麻</option>
-                    <option value="yonma">四麻</option>
-                </select>
-                <select
-                    value={gameLength}
-                    onChange={(e) =>
-                        setGameLength(e.target.value as "tonpu" | "hanchan")
-                    }
-                    className="border rounded px-2 py-1"
-                >
-                    <option value="tonpu">東風戦</option>
-                    <option value="hanchan">半荘戦</option>
-                </select>
-            </div>
 
             {/* 戦績カード */}
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>あなたの戦績</CardTitle>
+                    <select
+                        value={`${gameType}-${gameLength}`}
+                        onChange={(e) => {
+                            const [type, length] = e.target.value.split("-");
+                            setGameType(type as "sanma" | "yonma");
+                            setGameLength(length as "tonpu" | "hanchan");
+                        }}
+                        className="border rounded px-2 py-1"
+                    >
+                        <option value="yonma-hanchan">四麻 半荘</option>
+                        <option value="yonma-tonpu">四麻 東風</option>
+                        <option value="sanma-hanchan">三麻 半荘</option>
+                        <option value="sanma-tonpu">三麻 東風</option>
+                    </select>
                 </CardHeader>
+
                 <CardContent className="grid grid-cols-2 gap-4">
                     <div className="text-center p-3 bg-green-50 rounded-lg">
                         <div className="text-2xl font-bold text-green-600">

@@ -10,15 +10,9 @@ import { AuthGuard } from "@/components/features/AuthGuard";
 import { useAuth } from "@/contexts/auth-context";
 import { HomeStatsSelector } from "@/components/features/home-page/HomeStatsSelector";
 
-type GameType = "sanma" | "yonma";
-type GameLength = "tonpu" | "hanchan";
-
 export default function HomePage() {
     const router = useRouter();
     const { profile, isGuest, loading } = useAuth();
-
-    const [gameType, setGameType] = useState<GameType>("yonma");
-    const [gameLength, setGameLength] = useState<GameLength>("hanchan");
 
     useEffect(() => {
         if (!loading && !profile && !isGuest) {
