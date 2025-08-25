@@ -186,6 +186,7 @@ export default function TablePage() {
 
             {userId && currentGameStatsId && (
                 <GameStatsModal
+                    gamesWithStats={gamesWithStats}
                     gameStatsId={currentGameStatsId}
                     userId={userId}
                     open={modalOpen}

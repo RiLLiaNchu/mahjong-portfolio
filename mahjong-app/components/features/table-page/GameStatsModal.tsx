@@ -2,8 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { GameStatsInput, updateGameStats } from "@/lib/api/gameStats";
+import { GameWithStats } from "@/types/game";
+import { NumberRow } from "./LabelInput";
+import { NumberStepperRow } from "./NumberStepperRow";
 
 type Props = {
+    gamesWithStats: GameWithStats[];
     gameStatsId: string;
     userId: string;
     initialData?: Partial<GameStatsInput>;
@@ -11,45 +15,108 @@ type Props = {
     onClose: () => void;
 };
 
+const pointSuggestions = [
+    1000, 1300, 2000, 2600, 3900, 5200, 7700, 8000, 11600, 12000,
+];
+
+const usePoints = (
+    fieldName: keyof GameStatsInput,
+    handleChange: (field: keyof GameStatsInput, value: number) => void
+) => {
+    const [input, setInput] = useState(0);
+    const [points, setPoints] = useState<number[]>([]);
+
+    const addPoint = () => {
+        if (input !== 0) {
+            const newPoints = [...points, input];
+            setPoints(newPoints);
+            setInput(0);
+            handleChange(
+                fieldName,
+                newPoints.reduce((sum, p) => sum + p, 0)
+            );
+        }
+    };
+
+    return { input, setInput, points, addPoint };
+};
+
 export const GameStatsModal = ({
+    gamesWithStats,
     gameStatsId,
     userId,
     initialData = {},
     open,
     onClose,
 }: Props) => {
-    const [step, setStep] = useState(1); // 1: 基本情報 2: 最終情報
+    const [step, setStep] = useState(1);
     const [form, setForm] = useState<Partial<GameStatsInput>>({
         ...initialData,
-        user_id: userId, // 初期値として user_id を必ずセット
+        user_id: userId,
     });
-    const [modalOpen, setModalOpen] = useState(true);
     const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        if (!open) setStep(1);
-        // モーダル開閉時に user_id を再セット
-        setForm((prev) => ({ ...prev, user_id: userId }));
-    }, [open, userId]);
 
     const handleChange = (field: keyof GameStatsInput, value: number) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
+
+    const agari = usePoints("agari_total", handleChange);
+    const dealIn = usePoints("deal_in_total", handleChange);
+    const [kyokuAuto, setKyokuAuto] = useState(true);
+
+    useEffect(() => {
+        if (!open) setStep(1);
+        setForm((prev) => ({ ...prev, user_id: userId }));
+    }, [open, userId]);
 
     const handleSave = async () => {
         if (!gameStatsId) {
             alert("更新対象のゲームデータが見つかりません💦");
             return;
         }
-
         try {
             await updateGameStats(gameStatsId, form);
             console.log("更新成功");
-            onClose(); // モーダル閉じる
+            onClose();
         } catch (err: any) {
             console.error("保存処理エラー:", err);
             alert(err.message || "保存中にエラーが発生しました💦");
         }
+    };
+
+    const handleAgariChange = (val: number) => {
+        setForm((prev) => {
+            const agariDiff = val - (prev.agari_count ?? 0);
+            const newKyoku =
+                prev.kyoku_count !== undefined
+                    ? prev.kyoku_count + agariDiff
+                    : (prev.deal_in_count ?? 0) + val;
+            return {
+                ...prev,
+                agari_count: val,
+                kyoku_count: kyokuAuto
+                    ? newKyoku
+                    : (prev.kyoku_count ?? 0) + agariDiff,
+            };
+        });
+    };
+
+    const handleDealInChange = (val: number) => {
+        setForm((prev) => {
+            const dealInDiff = val - (prev.deal_in_count ?? 0);
+            return {
+                ...prev,
+                deal_in_count: val,
+                kyoku_count: kyokuAuto
+                    ? (prev.agari_count ?? 0) + val
+                    : (prev.kyoku_count ?? 0) + dealInDiff,
+            };
+        });
+    };
+
+    const handleKyokuChange = (val: number) => {
+        setForm((prev) => ({ ...prev, kyoku_count: val }));
+        setKyokuAuto(false); // 手動変更したら自動計算オフ
     };
 
     if (!open) return null;
@@ -57,252 +124,147 @@ export const GameStatsModal = ({
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-stone-50/95 rounded-2xl p-6 w-96 max-w-full shadow-2xl border border-stone-300 relative">
-                {/* ✕ボタン */}
                 <button
-                    onClick={onClose} // ← propsかstateで制御
+                    onClick={onClose}
                     className="absolute top-3 right-3 text-stone-600 hover:text-red-700 text-xl font-bold"
                 >
                     ×
                 </button>
 
                 <h2 className="text-xl font-bold mb-4 text-stone-800 border-b-2 border-red-700 pb-2">
-                    {step === 1 ? "基本情報入力" : "最終情報入力"}
+                    第 {gamesWithStats.length + 1} 試合目 -{" "}
+                    {step === 1
+                        ? "対局情報"
+                        : step === 2
+                        ? "対局結果"
+                        : "入力待機"}
                 </h2>
 
+                {/* ステップ1 */}
                 {step === 1 && (
                     <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                和了数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.agari_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange("agari_count", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                和了合計点
-                            </span>
-                            <input
-                                type="number"
-                                step={100}
-                                value={form.agari_total ?? 0}
-                                onChange={(e) =>
-                                    handleChange("agari_total", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                放銃数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.deal_in_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange(
-                                        "deal_in_count",
-                                        +e.target.value
-                                    )
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                放銃合計点
-                            </span>
-                            <input
-                                type="number"
-                                step={100}
-                                value={form.deal_in_total ?? 0}
-                                onChange={(e) =>
-                                    handleChange(
-                                        "deal_in_total",
-                                        +e.target.value
-                                    )
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                立直数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.riichi_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange(
-                                        "riichi_count",
-                                        +e.target.value
-                                    )
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                副露数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.furo_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange("furo_count", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                局数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.kyoku_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange("kyoku_count", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
+                        <NumberStepperRow
+                            label="和了数"
+                            value={form.agari_count ?? 0}
+                            onChange={handleAgariChange}
+                        />
+                        <NumberRow
+                            label="和了点"
+                            value={agari.input}
+                            onChange={agari.setInput}
+                            step={100}
+                            suggestions={pointSuggestions}
+                            withAddButton
+                            addAction={agari.addPoint}
+                            total={form.agari_total}
+                        />
+                        <NumberStepperRow
+                            label="放銃数"
+                            value={form.deal_in_count ?? 0}
+                            onChange={handleDealInChange}
+                        />
+                        <NumberRow
+                            label="放銃点"
+                            value={dealIn.input}
+                            onChange={dealIn.setInput}
+                            step={100}
+                            suggestions={pointSuggestions}
+                            withAddButton
+                            addAction={dealIn.addPoint}
+                            total={form.deal_in_total}
+                        />
+                        <NumberStepperRow
+                            label="立直数"
+                            value={form.riichi_count ?? 0}
+                            onChange={(v) => handleChange("riichi_count", v)}
+                        />
+                        <NumberStepperRow
+                            label="副露数"
+                            value={form.furo_count ?? 0}
+                            onChange={(v) => handleChange("furo_count", v)}
+                        />
+                        <NumberStepperRow
+                            label="局数"
+                            value={form.kyoku_count ?? 0}
+                            onChange={handleKyokuChange}
+                        />
                     </div>
                 )}
 
+                {/* ステップ2 */}
                 {step === 2 && (
                     <div className="space-y-3">
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                最終順位
-                            </span>
-                            <input
-                                type="number"
-                                value={form.rank ?? 2}
-                                onChange={(e) =>
-                                    handleChange("rank", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                最終点棒
-                            </span>
-                            <input
-                                type="number"
-                                step={100}
-                                value={form.point ?? 25000}
-                                onChange={(e) =>
-                                    handleChange("point", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                最終スコア
-                            </span>
-                            <input
-                                type="number"
-                                value={form.score ?? 0}
-                                onChange={(e) =>
-                                    handleChange("score", +e.target.value)
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                役満回数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.yakuman_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange(
-                                        "yakuman_count",
-                                        +e.target.value
-                                    )
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
-                        <div className="flex items-center justify-between border-b border-stone-300 pb-1">
-                            <span className="text-stone-700 font-medium">
-                                W役満回数
-                            </span>
-                            <input
-                                type="number"
-                                value={form.double_yakuman_count ?? 0}
-                                onChange={(e) =>
-                                    handleChange(
-                                        "double_yakuman_count",
-                                        +e.target.value
-                                    )
-                                }
-                                className="w-24 text-right px-2 py-1 rounded-md border border-stone-300 
-                 focus:ring-2 focus:ring-red-600 focus:border-red-600 bg-stone-50"
-                            />
-                        </div>
+                        <NumberStepperRow
+                            label="最終順位"
+                            value={form.rank ?? 2}
+                            min={1}
+                            max={4}
+                            onChange={(v) => handleChange("rank", v)}
+                        />
+                        <NumberRow
+                            label="最終点棒"
+                            value={form.point ?? 25000}
+                            onChange={(v) => handleChange("point", v)}
+                            step={100}
+                        />
+                        <NumberRow
+                            label="最終スコア"
+                            value={form.score ?? 0}
+                            onChange={(v) => handleChange("score", v)}
+                        />
+                        <NumberStepperRow
+                            label="役満回数"
+                            value={form.yakuman_count ?? 0}
+                            onChange={(v) => handleChange("yakuman_count", v)}
+                        />
+                        <NumberStepperRow
+                            label="W役満回数"
+                            value={form.double_yakuman_count ?? 0}
+                            onChange={(v) =>
+                                handleChange("double_yakuman_count", v)
+                            }
+                        />
                     </div>
                 )}
 
-                {/* ボタン群 */}
+                {/* ステップ3 */}
+                {step === 3 && (
+                    <div className="text-center space-y-4">
+                        <p className="text-stone-700 font-medium">
+                            他メンバーの入力を待っています…
+                        </p>
+                    </div>
+                )}
+
+                {/* ボタン */}
                 <div className="flex justify-between mt-6 space-x-2">
-                    {step === 2 && (
+                    {step !== 1 && (
+                        <button
+                            onClick={() => setStep(step - 1)}
+                            className="px-4 py-2 rounded-lg bg-stone-400 text-white hover:bg-stone-500 transition"
+                        >
+                            戻る
+                        </button>
+                    )}
+                    {step === 3 && (
                         <>
                             <button
-                                onClick={() => setStep(1)}
-                                className="px-4 py-2 rounded-lg bg-stone-400 text-white hover:bg-stone-500 transition"
+                                onClick={handleSave}
+                                className="px-4 py-2 rounded-lg bg-green-700 text-white hover:bg-green-800 transition"
                             >
-                                戻る
+                                保存
                             </button>
-
                             <button
-                                onClick={() => handleSave()}
-                                disabled={saving}
-                                className="px-4 py-2 rounded-lg bg-green-700 text-white hover:bg-green-800 transition disabled:opacity-50"
+                                onClick={handleSave}
+                                className="px-4 py-2 rounded-lg bg-purple-700 text-white hover:bg-purple-800 transition"
                             >
-                                保存して終了
-                            </button>
-
-                            <button
-                                onClick={() => handleSave()}
-                                disabled={saving}
-                                className="px-4 py-2 rounded-lg bg-purple-700 text-white hover:bg-purple-800 transition disabled:opacity-50"
-                            >
-                                保存して次の対局
+                                保存して次の対局へ
                             </button>
                         </>
                     )}
-
-                    {step === 1 && (
+                    {step !== 3 && (
                         <button
-                            onClick={() => setStep(2)}
+                            onClick={() => setStep(step + 1)}
                             className="px-4 py-2 rounded-lg bg-red-700 text-white hover:bg-red-800 transition"
                         >
                             次へ
